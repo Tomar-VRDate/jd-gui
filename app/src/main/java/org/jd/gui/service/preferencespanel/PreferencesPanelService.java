@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -15,32 +15,34 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 public class PreferencesPanelService {
-    protected static final PreferencesPanelService PREFERENCES_PANEL_SERVICE = new PreferencesPanelService();
+	protected static final PreferencesPanelService      PREFERENCES_PANEL_SERVICE = new PreferencesPanelService();
+	protected final        Collection<PreferencesPanel> providers;
 
-    public static PreferencesPanelService getInstance() { return PREFERENCES_PANEL_SERVICE; }
+	protected PreferencesPanelService() {
+		Collection<PreferencesPanel> list = ExtensionService.getInstance()
+		                                                    .load(PreferencesPanel.class);
+		Iterator<PreferencesPanel> iterator = list.iterator();
 
-    protected final Collection<PreferencesPanel> providers;
+		while (iterator.hasNext()) {
+			if (!iterator.next()
+			             .isActivated()) {
+				iterator.remove();
+			}
+		}
 
-    protected PreferencesPanelService() {
-        Collection<PreferencesPanel> list = ExtensionService.getInstance().load(PreferencesPanel.class);
-        Iterator<PreferencesPanel> iterator = list.iterator();
+		HashMap<String, PreferencesPanel> map = new HashMap<>();
 
-        while (iterator.hasNext()) {
-            if (!iterator.next().isActivated()) {
-                iterator.remove();
-            }
-        }
+		for (PreferencesPanel panel : list) {
+			map.put(panel.getPreferencesGroupTitle() + '$' + panel.getPreferencesPanelTitle(),
+			        panel);
+		}
 
-        HashMap<String, PreferencesPanel> map = new HashMap<>();
+		providers = map.values();
+	}
 
-        for (PreferencesPanel panel : list) {
-            map.put(panel.getPreferencesGroupTitle() + '$' + panel.getPreferencesPanelTitle(), panel);
-        }
+	public static PreferencesPanelService getInstance() {return PREFERENCES_PANEL_SERVICE;}
 
-        providers = map.values();
-    }
-
-    public Collection<PreferencesPanel> getProviders() {
-        return providers;
-    }
+	public Collection<PreferencesPanel> getProviders() {
+		return providers;
+	}
 }

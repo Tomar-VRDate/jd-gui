@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -17,23 +17,24 @@ import java.net.URI;
  * query              : queryLineNumber | queryPosition | querySearch<br>
  * queryLineNumber    : 'lineNumber=' [numeric]<br>
  * queryPosition      : 'position=' [numeric]<br>
- * querySearch        : 'highlightPattern=' queryPattern '&highlightFlags=' queryFlags ('&highlightScope=' typeName)?<br>
+ * querySearch        : 'highlightPattern=' queryPattern '&highlightFlags=' queryFlags ('&highlightScope=' typeName)
+ * ?<br>
  * queryPattern       : [start of string] | [start of type name] | [start of field name] | [start of method name]<br>
  * queryFlags         : 'd'? // Match declarations<br>
- *                      'r'? // Match references<br>
- *                      't'? // Match types<br>
- *                      'c'? // Match constructors<br>
- *                      'm'? // Match methods<br>
- *                      'f'? // Match fields<br>
- *                      's'? // Match strings<br>
+ * 'r'? // Match references<br>
+ * 't'? // Match types<br>
+ * 'c'? // Match constructors<br>
+ * 'm'? // Match methods<br>
+ * 'f'? // Match fields<br>
+ * 's'? // Match strings<br>
  * fragment            : fragmentType | fragmentField | fragmentMethod<br>
  * fragmentType        : typeName<br>
  * fragmentField       : typeName '-' [field name] '-' descriptor<br>
  * fragmentMethod      : typeName '-' [method name] '-' methodDescriptor<br>
  * methodDescriptor    : '(*)?' | // Match all method descriptors<br>
- *                       '(' descriptor* ')' descriptor<br>
+ * '(' descriptor* ')' descriptor<br>
  * descriptor          : '?' | // Match a primitive or a type name<br>
- *                       '['* primitiveOrTypeName<br>
+ * '['* primitiveOrTypeName<br>
  * primitiveOrTypeName : 'B' | 'C' | 'D' | 'F' | 'I' | 'J' | 'L' typeName ';' | 'S' | 'Z'<br>
  * typeName            : [internal qualified name] | '*\/' [name]<br>
  * <br>
@@ -62,5 +63,5 @@ import java.net.URI;
  * </ul>
  */
 public interface UriOpenable {
-    boolean openUri(URI uri);
+	boolean openUri(URI uri);
 }

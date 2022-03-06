@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -19,11 +19,12 @@ import java.util.List;
  * - org.jd.gui.view.component.RoundMarkErrorStrip
  */
 public class Marker {
-    public static void markAll(RTextArea textArea, List<DocumentRange> ranges) {
-        textArea.markAll(ranges);
-    }
+	public static void markAll(RTextArea textArea,
+	                           List<DocumentRange> ranges) {
+		textArea.markAll(ranges);
+	}
 
-    public static void clearMarkAllHighlights(RTextArea textArea) {
-        textArea.clearMarkAllHighlights();
-    }
+	public static void clearMarkAllHighlights(RTextArea textArea) {
+		textArea.clearMarkAllHighlights();
+	}
 }

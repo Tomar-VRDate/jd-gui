@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -12,28 +12,28 @@ import java.net.URI;
 import java.util.Collection;
 
 public interface Container {
-    String getType();
+	String getType();
 
-    Entry getRoot();
+	Entry getRoot();
 
-    /**
-     * File or directory
-     */
-    interface Entry {
-        Container getContainer();
+	/**
+	 * File or directory
+	 */
+	interface Entry {
+		Container getContainer();
 
-        Entry getParent();
+		Entry getParent();
 
-        URI getUri();
+		URI getUri();
 
-        String getPath();
+		String getPath();
 
-        boolean isDirectory();
+		boolean isDirectory();
 
-        long length();
+		long length();
 
-        InputStream getInputStream();
+		InputStream getInputStream();
 
-        Collection<Entry> getChildren();
-    }
+		Collection<Entry> getChildren();
+	}
 }

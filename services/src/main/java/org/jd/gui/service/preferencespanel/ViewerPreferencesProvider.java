@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -19,92 +19,116 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.Map;
 
-public class ViewerPreferencesProvider extends JPanel implements PreferencesPanel, DocumentListener {
-    protected static final int MIN_VALUE = 2;
-    protected static final int MAX_VALUE = 40;
-    protected static final String FONT_SIZE_KEY = "ViewerPreferences.fontSize";
+public class ViewerPreferencesProvider
+				extends JPanel
+				implements PreferencesPanel,
+				           DocumentListener {
+	protected static final int    MIN_VALUE     = 2;
+	protected static final int    MAX_VALUE     = 40;
+	protected static final String FONT_SIZE_KEY = "ViewerPreferences.fontSize";
 
-    protected PreferencesPanel.PreferencesPanelChangeListener listener = null;
-    protected JTextField fontSizeTextField;
-    protected Color errorBackgroundColor = Color.RED;
-    protected Color defaultBackgroundColor;
+	protected PreferencesPanel.PreferencesPanelChangeListener listener             = null;
+	protected JTextField                                      fontSizeTextField;
+	protected Color                                           errorBackgroundColor = Color.RED;
+	protected Color                                           defaultBackgroundColor;
 
-    public ViewerPreferencesProvider() {
-        super(new BorderLayout());
+	public ViewerPreferencesProvider() {
+		super(new BorderLayout());
 
-        add(new JLabel("Font size (" + MIN_VALUE + ".." + MAX_VALUE + "): "), BorderLayout.WEST);
+		add(new JLabel("Font size (" + MIN_VALUE + ".." + MAX_VALUE + "): "),
+		    BorderLayout.WEST);
 
-        fontSizeTextField = new JTextField();
-        fontSizeTextField.getDocument().addDocumentListener(this);
-        add(fontSizeTextField, BorderLayout.CENTER);
+		fontSizeTextField = new JTextField();
+		fontSizeTextField.getDocument()
+		                 .addDocumentListener(this);
+		add(fontSizeTextField,
+		    BorderLayout.CENTER);
 
-        defaultBackgroundColor = fontSizeTextField.getBackground();
-    }
+		defaultBackgroundColor = fontSizeTextField.getBackground();
+	}
 
-    // --- PreferencesPanel --- //
-    @Override public String getPreferencesGroupTitle() { return "Viewer"; }
-    @Override public String getPreferencesPanelTitle() { return "Appearance"; }
-    @Override public JComponent getPanel() { return this; }
+	// --- PreferencesPanel --- //
+	@Override
+	public String getPreferencesGroupTitle() {return "Viewer";}
 
-    @Override public void init(Color errorBackgroundColor) {
-        this.errorBackgroundColor = errorBackgroundColor;
-    }
+	@Override
+	public String getPreferencesPanelTitle() {return "Appearance";}
 
-    @Override public boolean isActivated() { return true; }
+	@Override
+	public JComponent getPanel() {return this;}
 
-    @Override
-    public void loadPreferences(Map<String, String> preferences) {
-        String fontSize = preferences.get(FONT_SIZE_KEY);
+	@Override
+	public void init(Color errorBackgroundColor) {
+		this.errorBackgroundColor = errorBackgroundColor;
+	}
 
-        if (fontSize == null) {
-            // Search default value for the current platform
-            RSyntaxTextArea textArea = new RSyntaxTextArea();
+	@Override
+	public boolean isActivated() {return true;}
 
-            try {
-                Theme theme = Theme.load(getClass().getClassLoader().getResourceAsStream("rsyntaxtextarea/themes/eclipse.xml"));
-                theme.apply(textArea);
-            } catch (IOException e) {
-                assert ExceptionUtil.printStackTrace(e);
-            }
+	@Override
+	public void loadPreferences(Map<String, String> preferences) {
+		String fontSize = preferences.get(FONT_SIZE_KEY);
 
-            fontSize = String.valueOf(textArea.getFont().getSize());
-        }
+		if (fontSize == null) {
+			// Search default value for the current platform
+			RSyntaxTextArea textArea = new RSyntaxTextArea();
 
-        fontSizeTextField.setText(fontSize);
-        fontSizeTextField.setCaretPosition(fontSizeTextField.getText().length());
-    }
+			try {
+				Theme theme = Theme.load(getClass().getClassLoader()
+				                                   .getResourceAsStream("rsyntaxtextarea/themes/eclipse.xml"));
+				theme.apply(textArea);
+			} catch (IOException e) {
+				assert ExceptionUtil.printStackTrace(e);
+			}
 
-    @Override
-    public void savePreferences(Map<String, String> preferences) {
-        preferences.put(FONT_SIZE_KEY, fontSizeTextField.getText());
-    }
+			fontSize = String.valueOf(textArea.getFont()
+			                                  .getSize());
+		}
 
-    @Override
-    public boolean arePreferencesValid() {
-        try {
-            int i = Integer.valueOf(fontSizeTextField.getText());
-            return (i >= MIN_VALUE) && (i <= MAX_VALUE);
-        } catch (NumberFormatException e) {
-            assert ExceptionUtil.printStackTrace(e);
-            return false;
-        }
-    }
+		fontSizeTextField.setText(fontSize);
+		fontSizeTextField.setCaretPosition(fontSizeTextField.getText()
+		                                                    .length());
+	}
 
-    @Override
-    public void addPreferencesChangeListener(PreferencesPanel.PreferencesPanelChangeListener listener) {
-        this.listener = listener;
-    }
+	@Override
+	public void savePreferences(Map<String, String> preferences) {
+		preferences.put(FONT_SIZE_KEY,
+		                fontSizeTextField.getText());
+	}
 
-    // --- DocumentListener --- //
-    @Override public void insertUpdate(DocumentEvent e) { onTextChange(); }
-    @Override public void removeUpdate(DocumentEvent e) { onTextChange(); }
-    @Override public void changedUpdate(DocumentEvent e) { onTextChange(); }
+	@Override
+	public boolean arePreferencesValid() {
+		try {
+			int i = Integer.valueOf(fontSizeTextField.getText());
+			return (i >= MIN_VALUE) && (i <= MAX_VALUE);
+		} catch (NumberFormatException e) {
+			assert ExceptionUtil.printStackTrace(e);
+			return false;
+		}
+	}
 
-    public void onTextChange() {
-        fontSizeTextField.setBackground(arePreferencesValid() ? defaultBackgroundColor : errorBackgroundColor);
+	@Override
+	public void addPreferencesChangeListener(PreferencesPanel.PreferencesPanelChangeListener listener) {
+		this.listener = listener;
+	}
 
-        if (listener != null) {
-            listener.preferencesPanelChanged(this);
-        }
-    }
+	// --- DocumentListener --- //
+	@Override
+	public void insertUpdate(DocumentEvent e) {onTextChange();}
+
+	@Override
+	public void removeUpdate(DocumentEvent e) {onTextChange();}
+
+	@Override
+	public void changedUpdate(DocumentEvent e) {onTextChange();}
+
+	public void onTextChange() {
+		fontSizeTextField.setBackground(arePreferencesValid()
+		                                ? defaultBackgroundColor
+		                                : errorBackgroundColor);
+
+		if (listener != null) {
+			listener.preferencesPanelChanged(this);
+		}
+	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -16,29 +16,32 @@ import java.util.Collection;
 import java.util.HashMap;
 
 public class UriLoaderService {
-    protected static final UriLoaderService URI_LOADER_SERVICE = new UriLoaderService();
+	protected static final UriLoaderService           URI_LOADER_SERVICE = new UriLoaderService();
+	protected              HashMap<String, UriLoader> mapProviders       = new HashMap<>();
 
-    public static UriLoaderService getInstance() { return URI_LOADER_SERVICE; }
+	protected UriLoaderService() {
+		Collection<UriLoader> providers = ExtensionService.getInstance()
+		                                                  .load(UriLoader.class);
 
-    protected HashMap<String, UriLoader> mapProviders = new HashMap<>();
+		for (UriLoader provider : providers) {
+			for (String scheme : provider.getSchemes()) {
+				mapProviders.put(scheme,
+				                 provider);
+			}
+		}
+	}
 
-    protected UriLoaderService() {
-        Collection<UriLoader> providers = ExtensionService.getInstance().load(UriLoader.class);
+	public static UriLoaderService getInstance() {return URI_LOADER_SERVICE;}
 
-        for (UriLoader provider : providers) {
-            for (String scheme : provider.getSchemes()) {
-                mapProviders.put(scheme, provider);
-            }
-        }
-    }
+	public UriLoader get(API api,
+	                     URI uri) {
+		UriLoader provider = mapProviders.get(uri.getScheme());
 
-    public UriLoader get(API api, URI uri) {
-        UriLoader provider = mapProviders.get(uri.getScheme());
-
-        if (provider.accept(api, uri)) {
-            return provider;
-        } else {
-            return null;
-        }
-    }
+		if (provider.accept(api,
+		                    uri)) {
+			return provider;
+		} else {
+			return null;
+		}
+	}
 }

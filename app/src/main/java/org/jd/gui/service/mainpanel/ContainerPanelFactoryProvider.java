@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -32,157 +32,224 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public class ContainerPanelFactoryProvider implements PanelFactory {
-    protected static final String[] TYPES = { "default" };
+public class ContainerPanelFactoryProvider
+				implements PanelFactory {
+	protected static final String[] TYPES = {"default"};
 
-	@Override public String[] getTypes() { return TYPES; }
+	@Override
+	public String[] getTypes() {return TYPES;}
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T extends JComponent & UriGettable> T make(API api, Container container) {
-        return (T)new ContainerPanel(api, container);
+	@Override
+	@SuppressWarnings("unchecked")
+	public <T extends JComponent & UriGettable> T make(API api,
+	                                                   Container container) {
+		return (T) new ContainerPanel(api,
+		                              container);
 	}
 
-    protected class ContainerPanel extends TreeTabbedPanel implements ContentIndexable, SourcesSavable {
-        protected Container.Entry entry;
+	protected static class DelegatedMap<K, V>
+					implements Map<K, V> {
+		protected Map<K, V> map;
 
-        public ContainerPanel(API api, Container container) {
-            super(api, container.getRoot().getParent().getUri());
+		public DelegatedMap(Map<K, V> map) {this.map = map;}
 
-            this.entry = container.getRoot().getParent();
+		@Override
+		public int size() {return map.size();}
 
-            DefaultMutableTreeNode root = new DefaultMutableTreeNode();
+		@Override
+		public boolean isEmpty() {return map.isEmpty();}
 
-            for (Container.Entry entry : container.getRoot().getChildren()) {
-                TreeNodeFactory factory = api.getTreeNodeFactory(entry);
-                if (factory != null) {
-                    root.add(factory.make(api, entry));
-                }
-            }
+		@Override
+		public boolean containsKey(Object o) {return map.containsKey(o);}
 
-            tree.setModel(new DefaultTreeModel(root));
-        }
+		@Override
+		public boolean containsValue(Object o) {return map.containsValue(o);}
 
-        // --- ContentIndexable --- //
-        @Override
-        public Indexes index(API api) {
-            HashMap<String, Map<String, Collection>> map = new HashMap<>();
-            DelegatedMapMapWithDefault mapWithDefault = new DelegatedMapMapWithDefault(map);
+		@Override
+		public V get(Object o) {return map.get(o);}
 
-            // Index populating value automatically
-            Indexes indexesWithDefault = name -> mapWithDefault.get(name);
+		@Override
+		public V put(K k,
+		             V v) {
+			return map.put(k,
+			               v);
+		}
 
-            // Index entry
-            Indexer indexer = api.getIndexer(entry);
+		@Override
+		public V remove(Object o) {return map.remove(o);}
 
-            if (indexer != null) {
-                indexer.index(api, entry, indexesWithDefault);
-            }
+		@Override
+		public void putAll(Map<? extends K, ? extends V> map) {this.map.putAll(map);}
 
-            // To prevent memory leaks, return an index without the 'populate' behaviour
-            return name -> map.get(name);
-        }
+		@Override
+		public void clear() {map.clear();}
 
-        // --- SourcesSavable --- //
-        @Override
-        public String getSourceFileName() {
-            SourceSaver saver = api.getSourceSaver(entry);
+		@Override
+		public Set<K> keySet() {return map.keySet();}
 
-            if (saver != null) {
-                String path = saver.getSourcePath(entry);
-                int index = path.lastIndexOf('/');
-                return path.substring(index+1);
-            } else {
-                return null;
-            }
-        }
+		@Override
+		public Collection<V> values() {return map.values();}
 
-        @Override
-        public int getFileCount() {
-            SourceSaver saver = api.getSourceSaver(entry);
-            return (saver != null) ? saver.getFileCount(api, entry) : 0;
-        }
+		@Override
+		public Set<Entry<K, V>> entrySet() {return map.entrySet();}
 
-        @Override
-        public void save(API api, Controller controller, Listener listener, Path path) {
-            try {
-                Path parentPath = path.getParent();
+		@Override
+		public boolean equals(Object o) {return map.equals(o);}
 
-                if ((parentPath != null) && !Files.exists(parentPath)) {
-                    Files.createDirectories(parentPath);
-                }
+		@Override
+		public int hashCode() {return map.hashCode();}
+	}
 
-                URI uri = path.toUri();
-                URI archiveUri = new URI("jar:" + uri.getScheme(), uri.getHost(), uri.getPath() + "!/", null);
+	protected static class DelegatedMapWithDefault
+					extends DelegatedMap<String, Collection> {
+		public DelegatedMapWithDefault(Map<String, Collection> map) {super(map);}
 
-                try (FileSystem archiveFs = FileSystems.newFileSystem(archiveUri, Collections.singletonMap("create", "true"))) {
-                    Path archiveRootPath = archiveFs.getPath("/");
-                    SourceSaver saver = api.getSourceSaver(entry);
+		@Override
+		public Collection get(Object o) {
+			Collection value = map.get(o);
+			if (value == null) {
+				String key = o.toString();
+				map.put(key,
+				        value = new ArrayList());
+			}
+			return value;
+		}
+	}
 
-                    if (saver != null) {
-                        saver.saveContent(
-                            api,
-                            () -> controller.isCancelled(),
-                            (p) -> listener. pathSaved(p),
-                            archiveRootPath, archiveRootPath, entry);
-                    }
-                }
-            } catch (URISyntaxException|IOException e) {
-                assert ExceptionUtil.printStackTrace(e);
-            }
-        }
-    }
+	protected static class DelegatedMapMapWithDefault
+					extends DelegatedMap<String, Map<String, Collection>> {
+		protected HashMap<String, Map<String, Collection>> wrappers = new HashMap<>();
 
-    protected static class DelegatedMap<K, V> implements Map<K, V> {
-        protected Map<K, V> map;
+		public DelegatedMapMapWithDefault(Map<String, Map<String, Collection>> map) {super(map);}
 
-        public DelegatedMap(Map<K, V> map) { this.map = map; }
+		@Override
+		public Map<String, Collection> get(Object o) {
+			Map<String, Collection> value = wrappers.get(o);
 
-        @Override public int size() { return map.size(); }
-        @Override public boolean isEmpty() { return map.isEmpty(); }
-        @Override public boolean containsKey(Object o) { return map.containsKey(o); }
-        @Override public boolean containsValue(Object o) { return map.containsValue(o); }
-        @Override public V get(Object o) { return map.get(o); }
-        @Override public V put(K k, V v) { return map.put(k, v); }
-        @Override public V remove(Object o) { return map.remove(o); }
-        @Override public void putAll(Map<? extends K, ? extends V> map) { this.map.putAll(map); }
-        @Override public void clear() { map.clear(); }
-        @Override public Set<K> keySet() { return map.keySet(); }
-        @Override public Collection<V> values() { return map.values(); }
-        @Override public Set<Entry<K, V>> entrySet() { return map.entrySet(); }
-        @Override public boolean equals(Object o) { return map.equals(o); }
-        @Override public int hashCode() { return map.hashCode(); }
-    }
+			if (value == null) {
+				String                      key = o.toString();
+				HashMap<String, Collection> m   = new HashMap<>();
+				map.put(key,
+				        m);
+				wrappers.put(key,
+				             value = new DelegatedMapWithDefault(m));
+			}
 
-    protected static class DelegatedMapWithDefault extends DelegatedMap<String, Collection> {
-        public DelegatedMapWithDefault(Map<String, Collection> map) { super(map); }
+			return value;
+		}
+	}
 
-        @Override public Collection get(Object o) {
-            Collection value = map.get(o);
-            if (value == null) {
-                String key = o.toString();
-                map.put(key, value=new ArrayList());
-            }
-            return value;
-        }
-    }
+	protected class ContainerPanel
+					extends TreeTabbedPanel
+					implements ContentIndexable,
+					           SourcesSavable {
+		protected Container.Entry entry;
 
-    protected static class DelegatedMapMapWithDefault extends DelegatedMap<String, Map<String, Collection>> {
-	    protected HashMap<String, Map<String, Collection>> wrappers = new HashMap<>();
+		public ContainerPanel(API api,
+		                      Container container) {
+			super(api,
+			      container.getRoot()
+			               .getParent()
+			               .getUri());
 
-        public DelegatedMapMapWithDefault(Map<String, Map<String, Collection>> map) { super(map); }
+			this.entry = container.getRoot()
+			                      .getParent();
 
-        @Override public Map<String, Collection> get(Object o) {
-            Map<String, Collection> value = wrappers.get(o);
+			DefaultMutableTreeNode root = new DefaultMutableTreeNode();
 
-            if (value == null) {
-                String key = o.toString();
-                HashMap<String, Collection> m = new HashMap<>();
-                map.put(key, m);
-                wrappers.put(key, value=new DelegatedMapWithDefault(m));
-            }
+			for (Container.Entry entry : container.getRoot()
+			                                      .getChildren()) {
+				TreeNodeFactory factory = api.getTreeNodeFactory(entry);
+				if (factory != null) {
+					root.add(factory.make(api,
+					                      entry));
+				}
+			}
 
-            return value;
-        }
-    }
+			tree.setModel(new DefaultTreeModel(root));
+		}
+
+		// --- ContentIndexable --- //
+		@Override
+		public Indexes index(API api) {
+			HashMap<String, Map<String, Collection>> map            = new HashMap<>();
+			DelegatedMapMapWithDefault               mapWithDefault = new DelegatedMapMapWithDefault(map);
+
+			// Index populating value automatically
+			Indexes indexesWithDefault = name -> mapWithDefault.get(name);
+
+			// Index entry
+			Indexer indexer = api.getIndexer(entry);
+
+			if (indexer != null) {
+				indexer.index(api,
+				              entry,
+				              indexesWithDefault);
+			}
+
+			// To prevent memory leaks, return an index without the 'populate' behaviour
+			return name -> map.get(name);
+		}
+
+		// --- SourcesSavable --- //
+		@Override
+		public String getSourceFileName() {
+			SourceSaver saver = api.getSourceSaver(entry);
+
+			if (saver != null) {
+				String path  = saver.getSourcePath(entry);
+				int    index = path.lastIndexOf('/');
+				return path.substring(index + 1);
+			} else {
+				return null;
+			}
+		}
+
+		@Override
+		public int getFileCount() {
+			SourceSaver saver = api.getSourceSaver(entry);
+			return (saver != null)
+			       ? saver.getFileCount(api,
+			                            entry)
+			       : 0;
+		}
+
+		@Override
+		public void save(API api,
+		                 Controller controller,
+		                 Listener listener,
+		                 Path path) {
+			try {
+				Path parentPath = path.getParent();
+
+				if ((parentPath != null) && !Files.exists(parentPath)) {
+					Files.createDirectories(parentPath);
+				}
+
+				URI uri = path.toUri();
+				URI archiveUri = new URI("jar:" + uri.getScheme(),
+				                         uri.getHost(),
+				                         uri.getPath() + "!/",
+				                         null);
+
+				try (FileSystem archiveFs = FileSystems.newFileSystem(archiveUri,
+				                                                      Collections.singletonMap("create",
+				                                                                               "true"))) {
+					Path        archiveRootPath = archiveFs.getPath("/");
+					SourceSaver saver           = api.getSourceSaver(entry);
+
+					if (saver != null) {
+						saver.saveContent(api,
+						                  () -> controller.isCancelled(),
+						                  (p) -> listener.pathSaved(p),
+						                  archiveRootPath,
+						                  archiveRootPath,
+						                  entry);
+					}
+				}
+			} catch (URISyntaxException | IOException e) {
+				assert ExceptionUtil.printStackTrace(e);
+			}
+		}
+	}
 }

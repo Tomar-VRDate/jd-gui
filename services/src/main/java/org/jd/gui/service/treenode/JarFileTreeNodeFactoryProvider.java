@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -19,60 +19,77 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.io.File;
 import java.util.Collection;
 
-public class JarFileTreeNodeFactoryProvider extends ZipFileTreeNodeFactoryProvider {
-    protected static final ImageIcon JAR_FILE_ICON = new ImageIcon(JarFileTreeNodeFactoryProvider.class.getClassLoader().getResource("org/jd/gui/images/jar_obj.png"));
-    protected static final ImageIcon EJB_FILE_ICON = new ImageIcon(JarFileTreeNodeFactoryProvider.class.getClassLoader().getResource("org/jd/gui/images/ejbmodule_obj.gif"));
+public class JarFileTreeNodeFactoryProvider
+				extends ZipFileTreeNodeFactoryProvider {
+	protected static final ImageIcon JAR_FILE_ICON = new ImageIcon(JarFileTreeNodeFactoryProvider.class.getClassLoader()
+	                                                                                                   .getResource("org/jd/gui/images/jar_obj.png"));
+	protected static final ImageIcon EJB_FILE_ICON = new ImageIcon(JarFileTreeNodeFactoryProvider.class.getClassLoader()
+	                                                                                                   .getResource("org/jd/gui/images/ejbmodule_obj.gif"));
 
-    @Override public String[] getSelectors() { return appendSelectors("*:file:*.jar"); }
+	protected static boolean isAEjbModule(Container.Entry entry) {
+		Collection<Container.Entry> children = entry.getChildren();
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public <T extends DefaultMutableTreeNode & ContainerEntryGettable & UriGettable> T make(API api, Container.Entry entry) {
-        int lastSlashIndex = entry.getPath().lastIndexOf("/");
-        String label = entry.getPath().substring(lastSlashIndex+1);
-        String location = new File(entry.getUri()).getPath();
-        ImageIcon icon = isAEjbModule(entry) ? EJB_FILE_ICON : JAR_FILE_ICON;
-        T node = (T)new TreeNode(entry, new TreeNodeBean(label, "Location: " + location, icon));
-        // Add dummy node
-        node.add(new DefaultMutableTreeNode());
-        return node;
-    }
+		if (children != null) {
+			Container.Entry metaInf = null;
 
-    protected static boolean isAEjbModule(Container.Entry entry) {
-        Collection<Container.Entry> children = entry.getChildren();
+			for (Container.Entry child : children) {
+				if (child.getPath()
+				         .equals("META-INF")) {
+					metaInf = child;
+					break;
+				}
+			}
 
-        if (children != null) {
-            Container.Entry metaInf = null;
+			if (metaInf != null) {
+				children = metaInf.getChildren();
 
-            for (Container.Entry child : children) {
-                if (child.getPath().equals("META-INF")) {
-                    metaInf = child;
-                    break;
-                }
-            }
+				for (Container.Entry child : children) {
+					if (child.getPath()
+					         .equals("META-INF/ejb-jar.xml")) {
+						return true;
+					}
+				}
+			}
+		}
 
-            if (metaInf != null) {
-                children = metaInf.getChildren();
+		return false;
+	}
 
-                for (Container.Entry child : children) {
-                    if (child.getPath().equals("META-INF/ejb-jar.xml")) {
-                        return true;
-                    }
-                }
-            }
-        }
+	@Override
+	public String[] getSelectors() {return appendSelectors("*:file:*.jar");}
 
-        return false;
-    }
+	@Override
+	@SuppressWarnings("unchecked")
+	public <T extends DefaultMutableTreeNode & ContainerEntryGettable & UriGettable> T make(API api,
+	                                                                                        Container.Entry entry) {
+		int lastSlashIndex = entry.getPath()
+		                          .lastIndexOf("/");
+		String label = entry.getPath()
+		                    .substring(lastSlashIndex + 1);
+		String location = new File(entry.getUri()).getPath();
+		ImageIcon icon = isAEjbModule(entry)
+		                 ? EJB_FILE_ICON
+		                 : JAR_FILE_ICON;
+		T node = (T) new TreeNode(entry,
+		                          new TreeNodeBean(label,
+		                                           "Location: " + location,
+		                                           icon));
+		// Add dummy node
+		node.add(new DefaultMutableTreeNode());
+		return node;
+	}
 
-    protected static class TreeNode extends ZipFileTreeNodeFactoryProvider.TreeNode {
-        public TreeNode(Container.Entry entry, Object userObject) {
-            super(entry, userObject);
-        }
+	protected static class TreeNode
+					extends ZipFileTreeNodeFactoryProvider.TreeNode {
+		public TreeNode(Container.Entry entry,
+		                Object userObject) {
+			super(entry,
+			      userObject);
+		}
 
-        @Override
-        public Collection<Container.Entry> getChildren() {
-            return JarContainerEntryUtil.removeInnerTypeEntries(entry.getChildren());
-        }
-    }
+		@Override
+		public Collection<Container.Entry> getChildren() {
+			return JarContainerEntryUtil.removeInnerTypeEntries(entry.getChildren());
+		}
+	}
 }

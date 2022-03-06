@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -19,75 +19,85 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ScheduledExecutorService;
 
-public class SaveAllSourcesController implements SourcesSavable.Controller, SourcesSavable.Listener {
-    protected API api;
-    protected SaveAllSourcesView saveAllSourcesView;
-    protected boolean cancel;
-    protected int counter;
-    protected int mask;
+public class SaveAllSourcesController
+				implements SourcesSavable.Controller,
+				           SourcesSavable.Listener {
+	protected API                api;
+	protected SaveAllSourcesView saveAllSourcesView;
+	protected boolean            cancel;
+	protected int                counter;
+	protected int                mask;
 
-    public SaveAllSourcesController(API api, JFrame mainFrame) {
-        this.api = api;
-        // Create UI
-        this.saveAllSourcesView = new SaveAllSourcesView(mainFrame, this::onCanceled);
-    }
+	public SaveAllSourcesController(API api,
+	                                JFrame mainFrame) {
+		this.api = api;
+		// Create UI
+		this.saveAllSourcesView = new SaveAllSourcesView(mainFrame,
+		                                                 this::onCanceled);
+	}
 
-    public void show(ScheduledExecutorService executor, SourcesSavable savable, File file) {
-        // Show
-        this.saveAllSourcesView.show(file);
-        // Execute background task
-        executor.execute(() -> {
-            int fileCount = savable.getFileCount();
+	public void show(ScheduledExecutorService executor,
+	                 SourcesSavable savable,
+	                 File file) {
+		// Show
+		this.saveAllSourcesView.show(file);
+		// Execute background task
+		executor.execute(() -> {
+			int fileCount = savable.getFileCount();
 
-            saveAllSourcesView.updateProgressBar(0);
-            saveAllSourcesView.setMaxValue(fileCount);
+			saveAllSourcesView.updateProgressBar(0);
+			saveAllSourcesView.setMaxValue(fileCount);
 
-            cancel = false;
-            counter = 0;
-            mask = 2;
+			cancel = false;
+			counter = 0;
+			mask = 2;
 
-            while (fileCount > 64) {
-                fileCount >>= 1;
-                mask <<= 1;
-            }
+			while (fileCount > 64) {
+				fileCount >>= 1;
+				mask <<= 1;
+			}
 
-            mask--;
+			mask--;
 
-            try {
-                Path path = Paths.get(file.toURI());
-                Files.deleteIfExists(path);
+			try {
+				Path path = Paths.get(file.toURI());
+				Files.deleteIfExists(path);
 
-                try {
-                    savable.save(api, this, this, path);
-                } catch (Exception e) {
-                    assert ExceptionUtil.printStackTrace(e);
-                    saveAllSourcesView.showActionFailedDialog();
-                    cancel = true;
-                }
+				try {
+					savable.save(api,
+					             this,
+					             this,
+					             path);
+				} catch (Exception e) {
+					assert ExceptionUtil.printStackTrace(e);
+					saveAllSourcesView.showActionFailedDialog();
+					cancel = true;
+				}
 
-                if (cancel) {
-                    Files.deleteIfExists(path);
-                }
-            } catch (Throwable t) {
-                assert ExceptionUtil.printStackTrace(t);
-            }
+				if (cancel) {
+					Files.deleteIfExists(path);
+				}
+			} catch (Throwable t) {
+				assert ExceptionUtil.printStackTrace(t);
+			}
 
-            saveAllSourcesView.hide();
-        });
-    }
+			saveAllSourcesView.hide();
+		});
+	}
 
-    public boolean isActivated() { return saveAllSourcesView.isVisible(); }
+	public boolean isActivated() {return saveAllSourcesView.isVisible();}
 
-    protected void onCanceled() { cancel = true; }
+	protected void onCanceled()  {cancel = true;}
 
-    // --- SourcesSavable.Controller --- //
-    @Override public boolean isCancelled() { return cancel; }
+	// --- SourcesSavable.Controller --- //
+	@Override
+	public boolean isCancelled() {return cancel;}
 
-    // --- SourcesSavable.Listener --- //
-    @Override
-    public void pathSaved(Path path) {
-        if (((counter++) & mask) == 0) {
-            saveAllSourcesView.updateProgressBar(counter);
-        }
-    }
+	// --- SourcesSavable.Listener --- //
+	@Override
+	public void pathSaved(Path path) {
+		if (((counter++) & mask) == 0) {
+			saveAllSourcesView.updateProgressBar(counter);
+		}
+	}
 }

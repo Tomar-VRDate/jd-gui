@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -20,48 +20,75 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 
-public class ZipFileSourceSaverProvider extends DirectorySourceSaverProvider {
+public class ZipFileSourceSaverProvider
+				extends DirectorySourceSaverProvider {
 
-    @Override public String[] getSelectors() { return appendSelectors("*:file:*.zip", "*:file:*.jar", "*:file:*.war", "*:file:*.ear", "*:file:*.aar", "*:file:*.jmod", "*:file:*.kar"); }
+	@Override
+	public String[] getSelectors() {
+		return appendSelectors("*:file:*.zip",
+		                       "*:file:*.jar",
+		                       "*:file:*.war",
+		                       "*:file:*.ear",
+		                       "*:file:*.aar",
+		                       "*:file:*.jmod",
+		                       "*:file:*.kar");
+	}
 
-    @Override
-    public void save(API api, SourceSaver.Controller controller, SourceSaver.Listener listener, Path rootPath, Container.Entry entry) {
-        try {
-            String sourcePath = getSourcePath(entry);
-            Path path = rootPath.resolve(sourcePath);
-            Path parentPath = path.getParent();
+	@Override
+	public void save(API api,
+	                 SourceSaver.Controller controller,
+	                 SourceSaver.Listener listener,
+	                 Path rootPath,
+	                 Container.Entry entry) {
+		try {
+			String sourcePath = getSourcePath(entry);
+			Path   path       = rootPath.resolve(sourcePath);
+			Path   parentPath = path.getParent();
 
-            if ((parentPath != null) && !Files.exists(parentPath)) {
-                Files.createDirectories(parentPath);
-            }
+			if ((parentPath != null) && !Files.exists(parentPath)) {
+				Files.createDirectories(parentPath);
+			}
 
-            File tmpSourceFile = api.loadSourceFile(entry);
+			File tmpSourceFile = api.loadSourceFile(entry);
 
-            if (tmpSourceFile != null) {
-                Files.copy(tmpSourceFile.toPath(), path);
-            } else {
-                File tmpFile = File.createTempFile("jd-gui.", ".tmp.zip");
+			if (tmpSourceFile != null) {
+				Files.copy(tmpSourceFile.toPath(),
+				           path);
+			} else {
+				File tmpFile = File.createTempFile("jd-gui.",
+				                                   ".tmp-sources.jar");
 
-                tmpFile.delete();
-                tmpFile.deleteOnExit();
+				tmpFile.delete();
+				tmpFile.deleteOnExit();
 
-                URI tmpFileUri = tmpFile.toURI();
-                URI tmpArchiveUri = new URI("jar:" + tmpFileUri.getScheme(), tmpFileUri.getHost(), tmpFileUri.getPath() + "!/", null);
+				URI tmpFileUri = tmpFile.toURI();
+				URI tmpArchiveUri = new URI("jar:" + tmpFileUri.getScheme(),
+				                            tmpFileUri.getHost(),
+				                            tmpFileUri.getPath() + "!/",
+				                            null);
 
-                HashMap<String, String> env = new HashMap<>();
-                env.put("create", "true");
+				HashMap<String, String> env = new HashMap<>();
+				env.put("create",
+				        "true");
 
-                FileSystem tmpArchiveFs = FileSystems.newFileSystem(tmpArchiveUri, env);
-                Path tmpArchiveRootPath = tmpArchiveFs.getPath("/");
+				FileSystem tmpArchiveFs = FileSystems.newFileSystem(tmpArchiveUri,
+				                                                    env);
+				Path tmpArchiveRootPath = tmpArchiveFs.getPath("/");
 
-                saveContent(api, controller, listener, tmpArchiveRootPath, tmpArchiveRootPath, entry);
+				saveContent(api,
+				            controller,
+				            listener,
+				            tmpArchiveRootPath,
+				            tmpArchiveRootPath,
+				            entry);
 
-                tmpArchiveFs.close();
+				tmpArchiveFs.close();
 
-                Files.move(tmpFile.toPath(), path);
-            }
-        } catch (Exception e) {
-            assert ExceptionUtil.printStackTrace(e);
-        }
-    }
+				Files.move(tmpFile.toPath(),
+				           path);
+			}
+		} catch (Exception e) {
+			assert ExceptionUtil.printStackTrace(e);
+		}
+	}
 }

@@ -1,9 +1,28 @@
 apply plugin: 'java'
 
-dependencies {
+/*TODO
+    def downloadJar = { url, name ->
+        File file = new File("$buildDir/download/${name}.jar")
+        file.parentFile.mkdirs()
+        if (!file.exists()) {
+            new URL(url).withInputStream { downloadStream ->
+                file.withOutputStream { fileOut ->
+                    fileOut << downloadStream
+                }
+            }
+        }
+        files(file.absolutePath)
+    }
+*/
+dependencies { //example
     provided 'com.yuvimasory:orange-extensions:1.3.0'   // OSX support
     compile project(':api')
     runtime project(':services')
+/*TODO
+    // https://mvnrepository.com/artifact/org.benf/cfr
+    implementation 'org.benf:cfr:0.152'
+    compile downloadJar('https://github.com/QuiltMC/quiltflower/releases/download/1.7.0/quiltflower-1.7.0.jar', 'quiltflower-1.7.0')
+*/
 }
 
 version = parent.version

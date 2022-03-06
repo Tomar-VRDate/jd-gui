@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -16,31 +16,32 @@ import java.util.Collection;
 import java.util.HashMap;
 
 public class FileLoaderService {
-    protected static final FileLoaderService FILE_LOADER_SERVICE = new FileLoaderService();
+	protected static final FileLoaderService           FILE_LOADER_SERVICE = new FileLoaderService();
+	protected final        Collection<FileLoader>      providers           = ExtensionService.getInstance()
+	                                                                                         .load(FileLoader.class);
+	protected              HashMap<String, FileLoader> mapProviders        = new HashMap<>();
 
-    public static FileLoaderService getInstance() { return FILE_LOADER_SERVICE; }
+	protected FileLoaderService() {
+		for (FileLoader provider : providers) {
+			for (String extension : provider.getExtensions()) {
+				mapProviders.put(extension,
+				                 provider);
+			}
+		}
+	}
 
-    protected final Collection<FileLoader> providers = ExtensionService.getInstance().load(FileLoader.class);
+	public static FileLoaderService getInstance() {return FILE_LOADER_SERVICE;}
 
-    protected HashMap<String, FileLoader> mapProviders = new HashMap<>();
+	public FileLoader get(API api,
+	                      File file) {
+		String     name      = file.getName();
+		int        lastDot   = name.lastIndexOf('.');
+		String     extension = name.substring(lastDot + 1);
+		FileLoader provider  = mapProviders.get(extension);
+		return provider;
+	}
 
-    protected FileLoaderService() {
-        for (FileLoader provider : providers) {
-            for (String extension : provider.getExtensions()) {
-                mapProviders.put(extension, provider);
-            }
-        }
-    }
-
-    public FileLoader get(API api, File file) {
-        String name = file.getName();
-        int lastDot = name.lastIndexOf('.');
-        String extension = name.substring(lastDot+1);
-        FileLoader provider = mapProviders.get(extension);
-        return provider;
-    }
-
-    public HashMap<String, FileLoader> getMapProviders() {
-        return mapProviders;
-    }
+	public HashMap<String, FileLoader> getMapProviders() {
+		return mapProviders;
+	}
 }

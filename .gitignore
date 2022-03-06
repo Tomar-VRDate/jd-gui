@@ -9,7 +9,7 @@ src-generated/
 jd-gui.cfg
 
 # Idea
-.idea/
+.idea/workspace.xml
 out/
 *.ipr
 *.iml

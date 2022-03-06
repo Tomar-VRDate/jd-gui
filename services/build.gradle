@@ -12,7 +12,7 @@ version = parent.version
 
 // ANTLR //
 ext.antlr4 = [
-        antlrSource: 'src/main/antlr',
+        antlrSource   : 'src/main/antlr',
         destinationDir: 'src-generated/antlr/java',
         grammarPackage: 'org.jd.gui.util.parser.antlr'
 ]
@@ -62,6 +62,6 @@ ideaModule.dependsOn antlr4GenerateGrammarSource
 
 eclipse.classpath.file.withXml { xml ->
     def node = xml.asNode()
-    node.appendNode( 'classpathentry', [ kind: 'src', path: antlr4.destinationDir])
+    node.appendNode('classpathentry', [kind: 'src', path: antlr4.destinationDir])
 }
 eclipseClasspath.dependsOn antlr4GenerateGrammarSource

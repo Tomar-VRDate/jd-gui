@@ -1,4 +1,4 @@
 include 'api', 'app', 'services'
 
-rootProject.name='jd-gui'
+rootProject.name = 'jd-gui'
 

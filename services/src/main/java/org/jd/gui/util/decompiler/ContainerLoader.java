@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -15,56 +15,66 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class ContainerLoader implements Loader {
-    protected byte[] buffer = new byte[1024 * 4];
-    protected Container.Entry entry;
+public class ContainerLoader
+				implements Loader {
+	protected byte[]          buffer = new byte[1024 * 4];
+	protected Container.Entry entry;
 
-    public ContainerLoader() { this.entry = null; }
-    public ContainerLoader(Container.Entry entry) {
-        this.entry = entry;
-    }
+	public ContainerLoader() {this.entry = null;}
 
-    public void setEntry(Container.Entry e) { this.entry = e; }
+	public ContainerLoader(Container.Entry entry) {
+		this.entry = entry;
+	}
 
-    protected Container.Entry getEntry(String internalPath) {
-        String path = internalPath + ".class";
+	public void setEntry(Container.Entry e) {this.entry = e;}
 
-        if (entry.getPath().equals(path)) {
-            return entry;
-        }
-        for (Container.Entry e : entry.getParent().getChildren()) {
-            if (e.getPath().equals(path)) {
-                return e;
-            }
-        }
-        return null;
-    }
+	protected Container.Entry getEntry(String internalPath) {
+		String path = internalPath + ".class";
 
-    // --- Loader --- //
-    @Override
-    public boolean canLoad(String internalName) {
-        return getEntry(internalName) != null;
-    }
+		if (entry.getPath()
+		         .equals(path)) {
+			return entry;
+		}
+		for (Container.Entry e : entry.getParent()
+		                              .getChildren()) {
+			if (e.getPath()
+			     .equals(path)) {
+				return e;
+			}
+		}
+		return null;
+	}
 
-    @Override
-    public byte[] load(String internalName) throws LoaderException {
-        Container.Entry entry = getEntry(internalName);
+	// --- Loader --- //
+	@Override
+	public boolean canLoad(String internalName) {
+		return getEntry(internalName) != null;
+	}
 
-        if (entry == null) {
-            return null;
-        } else {
-            try (InputStream input=entry.getInputStream(); ByteArrayOutputStream output=new ByteArrayOutputStream()) {
-                int len = input.read(buffer);
+	@Override
+	public byte[] load(String internalName)
+					throws
+					LoaderException {
+		Container.Entry entry = getEntry(internalName);
 
-                while (len > 0) {
-                    output.write(buffer, 0, len);
-                    len = input.read(buffer);
-                }
+		if (entry == null) {
+			return null;
+		} else {
+			try (InputStream input = entry.getInputStream();
+			     ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+				int len = input.read(buffer);
 
-                return output.toByteArray();
-            } catch (IOException e) {
-                throw new LoaderException(e);
-            }
-        }
-    }
+				while (len > 0) {
+					output.write(buffer,
+					             0,
+					             len);
+					len = input.read(buffer);
+				}
+
+				return output.toByteArray();
+			} catch (IOException e) {
+				throw new LoaderException(e);
+			}
+		}
+	}
 }

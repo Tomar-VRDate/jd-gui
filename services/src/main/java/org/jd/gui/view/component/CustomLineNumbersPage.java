@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -27,296 +27,352 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.Map;
 
-public abstract class CustomLineNumbersPage extends HyperlinkPage {
-    protected Color errorForeground = Color.RED;
-    protected boolean showMisalignment = true;
+public abstract class CustomLineNumbersPage
+				extends HyperlinkPage {
+	protected Color   errorForeground  = Color.RED;
+	protected boolean showMisalignment = true;
+	/**
+	 * Map[textarea line number] = original line number
+	 */
+	protected int[]   lineNumberMap    = null;
+	protected int     maxLineNumber    = 0;
 
-    public void setErrorForeground(Color color) {
-        errorForeground = color;
-    }
+	public void setErrorForeground(Color color) {
+		errorForeground = color;
+	}
 
-    public void setShowMisalignment(boolean b) {
-        showMisalignment = b;
-    }
+	public void setShowMisalignment(boolean b) {
+		showMisalignment = b;
+	}
 
-    /**
-     * Map[textarea line number] = original line number
-     */
-    protected int[] lineNumberMap = null;
-    protected int maxLineNumber = 0;
+	protected void setMaxLineNumber(int maxLineNumber) {
+		if (maxLineNumber > 0) {
+			if (lineNumberMap == null) {
+				lineNumberMap = new int[maxLineNumber + 1];
+			} else if (lineNumberMap.length <= maxLineNumber) {
+				int[] tmp = new int[maxLineNumber + 1];
+				System.arraycopy(lineNumberMap,
+				                 0,
+				                 tmp,
+				                 0,
+				                 lineNumberMap.length);
+				lineNumberMap = tmp;
+			}
 
-    protected void setMaxLineNumber(int maxLineNumber) {
-        if (maxLineNumber > 0) {
-            if (lineNumberMap == null) {
-                lineNumberMap = new int[maxLineNumber+1];
-            } else if (lineNumberMap.length <= maxLineNumber) {
-                int[] tmp = new int[maxLineNumber+1];
-                System.arraycopy(lineNumberMap, 0, tmp, 0, lineNumberMap.length);
-                lineNumberMap = tmp;
-            }
+			this.maxLineNumber = maxLineNumber;
+		}
+	}
 
-            this.maxLineNumber = maxLineNumber;
-        }
-    }
+	protected void initLineNumbers() {
+		String text = getText();
+		int    len  = text.length();
 
-    protected void initLineNumbers() {
-        String text = getText();
-        int len = text.length();
+		if (len == 0) {
+			setMaxLineNumber(0);
+		} else {
+			int mln = len - text.replace("\n",
+			                             "")
+			                    .length();
 
-        if (len == 0) {
-            setMaxLineNumber(0);
-        } else {
-            int mln = len - text.replace("\n", "").length();
+			if (text.charAt(len - 1) != '\n') {
+				mln++;
+			}
 
-            if (text.charAt(len-1) != '\n') {
-                mln++;
-            }
+			setMaxLineNumber(mln);
 
-            setMaxLineNumber(mln);
+			for (int i = 1;
+			     i <= maxLineNumber;
+			     i++) {
+				lineNumberMap[i] = i;
+			}
+		}
+	}
 
-            for (int i=1; i<=maxLineNumber; i++) {
-                lineNumberMap[i] = i;
-            }
-        }
-    }
+	protected void setLineNumber(int textAreaLineNumber,
+	                             int originalLineNumber) {
+		if (originalLineNumber > 0) {
+			setMaxLineNumber(textAreaLineNumber);
+			lineNumberMap[textAreaLineNumber] = originalLineNumber;
+		}
+	}
 
-    protected void setLineNumber(int textAreaLineNumber, int originalLineNumber) {
-        if (originalLineNumber > 0) {
-            setMaxLineNumber(textAreaLineNumber);
-            lineNumberMap[textAreaLineNumber] = originalLineNumber;
-        }
-    }
+	protected void clearLineNumbers() {
+		if (lineNumberMap != null) {
+			Arrays.fill(lineNumberMap,
+			            0);
+		}
+	}
 
-    protected void clearLineNumbers() {
-        if (lineNumberMap != null) {
-            Arrays.fill(lineNumberMap, 0);
-        }
-    }
+	protected int getMaximumSourceLineNumber() {return maxLineNumber;}
 
-    protected int getMaximumSourceLineNumber() { return maxLineNumber; }
+	protected int getTextAreaLineNumber(int originalLineNumber) {
+		int textAreaLineNumber            = 1;
+		int greatestLowerSourceLineNumber = 0;
+		int i                             = lineNumberMap.length;
 
-    protected int getTextAreaLineNumber(int originalLineNumber) {
-        int textAreaLineNumber = 1;
-        int greatestLowerSourceLineNumber = 0;
-        int i = lineNumberMap.length;
+		while (i-- > 0) {
+			int sln = lineNumberMap[i];
+			if (sln <= originalLineNumber) {
+				if (greatestLowerSourceLineNumber < sln) {
+					greatestLowerSourceLineNumber = sln;
+					textAreaLineNumber = i;
+				}
+			}
+		}
 
-        while (i-- > 0) {
-            int sln = lineNumberMap[i];
-            if (sln <= originalLineNumber) {
-                if (greatestLowerSourceLineNumber < sln) {
-                    greatestLowerSourceLineNumber = sln;
-                    textAreaLineNumber = i;
-                }
-            }
-        }
+		return textAreaLineNumber;
+	}
 
-        return textAreaLineNumber;
-    }
+	@Override
+	protected RSyntaxTextArea newSyntaxTextArea() {return new SourceSyntaxTextArea();}
 
-    @Override protected RSyntaxTextArea newSyntaxTextArea() { return new SourceSyntaxTextArea(); }
+	public class SourceSyntaxTextArea
+					extends HyperlinkSyntaxTextArea {
+		@Override
+		protected RTextAreaUI createRTextAreaUI() {return new SourceSyntaxTextAreaUI(this);}
+	}
 
-    public class SourceSyntaxTextArea extends HyperlinkSyntaxTextArea {
-        @Override protected RTextAreaUI createRTextAreaUI() { return new SourceSyntaxTextAreaUI(this); }
-    }
+	/**
+	 * A lot of code to replace the default LineNumberList...
+	 */
+	public class SourceSyntaxTextAreaUI
+					extends RSyntaxTextAreaUI {
+		public SourceSyntaxTextAreaUI(JComponent rSyntaxTextArea) {super(rSyntaxTextArea);}
 
-    /**
-     * A lot of code to replace the default LineNumberList...
-     */
-    public class SourceSyntaxTextAreaUI extends RSyntaxTextAreaUI {
-        public SourceSyntaxTextAreaUI(JComponent rSyntaxTextArea) { super(rSyntaxTextArea); }
-        @Override public EditorKit getEditorKit(JTextComponent tc) { return new SourceSyntaxTextAreaEditorKit(); }
-        @Override public Rectangle getVisibleEditorRect() { return super.getVisibleEditorRect(); }
-    }
+		@Override
+		public EditorKit getEditorKit(JTextComponent tc) {return new SourceSyntaxTextAreaEditorKit();}
 
-    public class SourceSyntaxTextAreaEditorKit extends RSyntaxTextAreaEditorKit {
-        @Override public LineNumberList createLineNumberList(RTextArea textArea) { return new SourceLineNumberList(textArea); }
-    }
+		@Override
+		public Rectangle getVisibleEditorRect() {return super.getVisibleEditorRect();}
+	}
 
-    /**
-     * Why 'LineNumberList' is so unexpandable ? Too many private fields & methods and too many package scope.
-     */
-    public class SourceLineNumberList extends LineNumberList {
-        protected RTextArea rTextArea;
-        protected Map<?,?> aaHints;
-        protected Rectangle visibleRect;
-        protected Insets textAreaInsets;
-        protected Dimension preferredSize;
+	public class SourceSyntaxTextAreaEditorKit
+					extends RSyntaxTextAreaEditorKit {
+		@Override
+		public LineNumberList createLineNumberList(RTextArea textArea) {return new SourceLineNumberList(textArea);}
+	}
 
-        public SourceLineNumberList(RTextArea textArea) {
-            super(textArea, null);
-            this.rTextArea = textArea;
-        }
+	/**
+	 * Why 'LineNumberList' is so unexpandable ? Too many private fields & methods and too many package scope.
+	 */
+	public class SourceLineNumberList
+					extends LineNumberList {
+		protected RTextArea rTextArea;
+		protected Map<?, ?> aaHints;
+		protected Rectangle visibleRect;
+		protected Insets    textAreaInsets;
+		protected Dimension preferredSize;
 
-        @Override
-        protected void init() {
-            super.init();
-            visibleRect = new Rectangle();
-            aaHints = RSyntaxUtilities.getDesktopAntiAliasHints();
-            textAreaInsets = null;
-        }
+		public SourceLineNumberList(RTextArea textArea) {
+			super(textArea,
+			      null);
+			this.rTextArea = textArea;
+		}
 
-        /**
-         * @see org.fife.ui.rtextarea.LineNumberList#paintComponent(java.awt.Graphics)
-         */
-        @Override
-        protected void paintComponent(Graphics g) {
-            visibleRect = g.getClipBounds(visibleRect);
+		@Override
+		protected void init() {
+			super.init();
+			visibleRect = new Rectangle();
+			aaHints = RSyntaxUtilities.getDesktopAntiAliasHints();
+			textAreaInsets = null;
+		}
 
-            if (visibleRect == null) {
-                visibleRect = getVisibleRect();
-            }
-            if (visibleRect == null) {
-                return;
-            }
+		/**
+		 * @see org.fife.ui.rtextarea.LineNumberList#paintComponent(java.awt.Graphics)
+		 */
+		@Override
+		protected void paintComponent(Graphics g) {
+			visibleRect = g.getClipBounds(visibleRect);
 
-            int cellWidth = getPreferredSize().width;
-            int cellHeight = rTextArea.getLineHeight();
-            int ascent = rTextArea.getMaxAscent();
-            FoldManager fm = ((RSyntaxTextArea)rTextArea).getFoldManager();
-            int RHS_BORDER_WIDTH = getRhsBorderWidth();
-            FontMetrics metrics = g.getFontMetrics();
-            int rhs = getWidth() - RHS_BORDER_WIDTH;
+			if (visibleRect == null) {
+				visibleRect = getVisibleRect();
+			}
+			if (visibleRect == null) {
+				return;
+			}
 
-            if (getParent() instanceof Gutter) { // Should always be true
-                g.setColor(getParent().getBackground());
-            } else {
-                g.setColor(getBackground());
-            }
+			int         cellWidth        = getPreferredSize().width;
+			int         cellHeight       = rTextArea.getLineHeight();
+			int         ascent           = rTextArea.getMaxAscent();
+			FoldManager fm               = ((RSyntaxTextArea) rTextArea).getFoldManager();
+			int         RHS_BORDER_WIDTH = getRhsBorderWidth();
+			FontMetrics metrics          = g.getFontMetrics();
+			int         rhs              = getWidth() - RHS_BORDER_WIDTH;
 
-            g.fillRect(0, visibleRect.y, cellWidth, visibleRect.height);
-            g.setFont(getFont());
+			if (getParent() instanceof Gutter) { // Should always be true
+				g.setColor(getParent().getBackground());
+			} else {
+				g.setColor(getBackground());
+			}
 
-            if (aaHints != null) {
-                ((Graphics2D)g).addRenderingHints(aaHints);
-            }
+			g.fillRect(0,
+			           visibleRect.y,
+			           cellWidth,
+			           visibleRect.height);
+			g.setFont(getFont());
 
-            if (rTextArea.getLineWrap()) {
-                SourceSyntaxTextAreaUI ui = (SourceSyntaxTextAreaUI)rTextArea.getUI();
-                View v = ui.getRootView(rTextArea).getView(0);
-                Element root = rTextArea.getDocument().getDefaultRootElement();
-                int lineCount = root.getElementCount();
-                int topPosition = rTextArea.viewToModel(visibleRect.getLocation());
-                int topLine = root.getElementIndex(topPosition);
-                Rectangle visibleEditorRect = ui.getVisibleEditorRect();
-                Rectangle r = LineNumberList.getChildViewBounds(v, topLine, visibleEditorRect);
-                int y = r.y;
+			if (aaHints != null) {
+				((Graphics2D) g).addRenderingHints(aaHints);
+			}
 
-                int visibleBottom =  visibleRect.y + visibleRect.height;
+			if (rTextArea.getLineWrap()) {
+				SourceSyntaxTextAreaUI ui = (SourceSyntaxTextAreaUI) rTextArea.getUI();
+				View v = ui.getRootView(rTextArea)
+				           .getView(0);
+				Element root = rTextArea.getDocument()
+				                        .getDefaultRootElement();
+				int       lineCount         = root.getElementCount();
+				int       topPosition       = rTextArea.viewToModel(visibleRect.getLocation());
+				int       topLine           = root.getElementIndex(topPosition);
+				Rectangle visibleEditorRect = ui.getVisibleEditorRect();
+				Rectangle r = LineNumberList.getChildViewBounds(v,
+				                                                topLine,
+				                                                visibleEditorRect);
+				int y = r.y;
 
-                // Keep painting lines until our y-coordinate is past the visible
-                // end of the text area.
+				int visibleBottom = visibleRect.y + visibleRect.height;
 
-                while (y < visibleBottom) {
-                    r = getChildViewBounds(v, topLine, visibleEditorRect);
+				// Keep painting lines until our y-coordinate is past the visible
+				// end of the text area.
 
-                    // Paint the line number.
-                    paintLineNumber(g, metrics, rhs, y+ascent, topLine + 1);
+				while (y < visibleBottom) {
+					r = getChildViewBounds(v,
+					                       topLine,
+					                       visibleEditorRect);
 
-                    // The next possible y-coordinate is just after the last line
-                    // painted.
-                    y += r.height;
+					// Paint the line number.
+					paintLineNumber(g,
+					                metrics,
+					                rhs,
+					                y + ascent,
+					                topLine + 1);
 
-                    // Update topLine (we're actually using it for our "current line"
-                    // variable now).
-                    if (fm != null) {
-                        Fold fold = fm.getFoldForLine(topLine);
-                        if ((fold != null) && fold.isCollapsed()) {
-                            topLine += fold.getCollapsedLineCount();
-                        }
-                    }
+					// The next possible y-coordinate is just after the last line
+					// painted.
+					y += r.height;
 
-                    if (++topLine >= lineCount) {
-                        break;
-                    }
-                }
-            } else {
-                textAreaInsets = rTextArea.getInsets(textAreaInsets);
+					// Update topLine (we're actually using it for our "current line"
+					// variable now).
+					if (fm != null) {
+						Fold fold = fm.getFoldForLine(topLine);
+						if ((fold != null) && fold.isCollapsed()) {
+							topLine += fold.getCollapsedLineCount();
+						}
+					}
 
-                if (visibleRect.y < textAreaInsets.top) {
-                    visibleRect.height -= (textAreaInsets.top - visibleRect.y);
-                    visibleRect.y = textAreaInsets.top;
-                }
+					if (++topLine >= lineCount) {
+						break;
+					}
+				}
+			} else {
+				textAreaInsets = rTextArea.getInsets(textAreaInsets);
 
-                int topLine = (visibleRect.y - textAreaInsets.top) / cellHeight;
-                int actualTopY = topLine * cellHeight + textAreaInsets.top;
-                int y = actualTopY + ascent;
+				if (visibleRect.y < textAreaInsets.top) {
+					visibleRect.height -= (textAreaInsets.top - visibleRect.y);
+					visibleRect.y = textAreaInsets.top;
+				}
 
-                // Get the actual first line to paint, taking into account folding.
-                topLine += fm.getHiddenLineCountAbove(topLine, true);
+				int topLine    = (visibleRect.y - textAreaInsets.top) / cellHeight;
+				int actualTopY = topLine * cellHeight + textAreaInsets.top;
+				int y          = actualTopY + ascent;
 
-                // Paint line numbers
-                g.setColor(getForeground());
+				// Get the actual first line to paint, taking into account folding.
+				topLine += fm.getHiddenLineCountAbove(topLine,
+				                                      true);
 
-                int line = topLine + 1;
+				// Paint line numbers
+				g.setColor(getForeground());
 
-                while ((y < visibleRect.y + visibleRect.height + ascent) && (line <= rTextArea.getLineCount())) {
-                    paintLineNumber(g, metrics, rhs, y, line);
+				int line = topLine + 1;
 
-                    y += cellHeight;
+				while ((y < visibleRect.y + visibleRect.height + ascent) && (line <= rTextArea.getLineCount())) {
+					paintLineNumber(g,
+					                metrics,
+					                rhs,
+					                y,
+					                line);
 
-                    if (fm != null) {
-                        Fold fold = fm.getFoldForLine(line - 1);
-                        // Skip to next line to paint, taking extra care for lines with
-                        // block ends and begins together, e.g. "} else {"
-                        while ((fold != null) && fold.isCollapsed()) {
-                            int hiddenLineCount = fold.getLineCount();
-                            if (hiddenLineCount == 0) {
-                                // Fold parser identified a 0-line fold region... This
-                                // is really a bug, but we'll handle it gracefully.
-                                break;
-                            }
-                            line += hiddenLineCount;
-                            fold = fm.getFoldForLine(line - 1);
-                        }
-                    }
+					y += cellHeight;
 
-                    line++;
-                }
-            }
-        }
+					if (fm != null) {
+						Fold fold = fm.getFoldForLine(line - 1);
+						// Skip to next line to paint, taking extra care for lines with
+						// block ends and begins together, e.g. "} else {"
+						while ((fold != null) && fold.isCollapsed()) {
+							int hiddenLineCount = fold.getLineCount();
+							if (hiddenLineCount == 0) {
+								// Fold parser identified a 0-line fold region... This
+								// is really a bug, but we'll handle it gracefully.
+								break;
+							}
+							line += hiddenLineCount;
+							fold = fm.getFoldForLine(line - 1);
+						}
+					}
 
-        protected void paintLineNumber(Graphics g, FontMetrics metrics, int x, int y, int lineNumber) {
-            int originalLineNumber;
+					line++;
+				}
+			}
+		}
 
-            if (lineNumberMap != null) {
-                originalLineNumber = (lineNumber < lineNumberMap.length) ? lineNumberMap[lineNumber] : 0;
-            } else {
-                originalLineNumber = lineNumber;
-            }
+		protected void paintLineNumber(Graphics g,
+		                               FontMetrics metrics,
+		                               int x,
+		                               int y,
+		                               int lineNumber) {
+			int originalLineNumber;
 
-            if (originalLineNumber != 0) {
-                String number = Integer.toString(originalLineNumber);
-                int strWidth = metrics.stringWidth(number);
-                g.setColor(showMisalignment && (lineNumber != originalLineNumber) ? errorForeground : getForeground());
-                g.drawString(number, x-strWidth, y);
-            }
-        }
+			if (lineNumberMap != null) {
+				originalLineNumber = (lineNumber < lineNumberMap.length)
+				                     ? lineNumberMap[lineNumber]
+				                     : 0;
+			} else {
+				originalLineNumber = lineNumber;
+			}
 
-        public int getRhsBorderWidth() { return ((RSyntaxTextArea)rTextArea).isCodeFoldingEnabled() ? 0 : 4; }
+			if (originalLineNumber != 0) {
+				String number   = Integer.toString(originalLineNumber);
+				int    strWidth = metrics.stringWidth(number);
+				g.setColor(showMisalignment && (lineNumber != originalLineNumber)
+				           ? errorForeground
+				           : getForeground());
+				g.drawString(number,
+				             x - strWidth,
+				             y);
+			}
+		}
 
-        @Override
-        public Dimension getPreferredSize() {
-            if (preferredSize == null) {
-                int lineCount = getMaximumSourceLineNumber();
+		public int getRhsBorderWidth() {
+			return ((RSyntaxTextArea) rTextArea).isCodeFoldingEnabled()
+			       ? 0
+			       : 4;
+		}
 
-                if (lineCount > 0) {
-                    Font font = getFont();
-                    FontMetrics fontMetrics = getFontMetrics(font);
-                    int count = 1;
+		@Override
+		public Dimension getPreferredSize() {
+			if (preferredSize == null) {
+				int lineCount = getMaximumSourceLineNumber();
 
-                    while (lineCount >= 10) {
-                        lineCount = lineCount / 10;
-                        count++;
-                    }
+				if (lineCount > 0) {
+					Font        font        = getFont();
+					FontMetrics fontMetrics = getFontMetrics(font);
+					int         count       = 1;
 
-                    int preferredWidth = fontMetrics.charWidth('9') * count + 10;
-                    preferredSize = new Dimension(preferredWidth, 0);
-                } else {
-                    preferredSize = new Dimension(0, 0);
-                }
-            }
+					while (lineCount >= 10) {
+						lineCount = lineCount / 10;
+						count++;
+					}
 
-            return preferredSize;
-        }
-    }
+					int preferredWidth = fontMetrics.charWidth('9') * count + 10;
+					preferredSize = new Dimension(preferredWidth,
+					                              0);
+				} else {
+					preferredSize = new Dimension(0,
+					                              0);
+				}
+			}
+
+			return preferredSize;
+		}
+	}
 }

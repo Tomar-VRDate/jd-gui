@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -18,52 +18,64 @@ import java.util.Map;
 import java.util.concurrent.Future;
 
 public class IndexesUtil {
-    public static boolean containsInternalTypeName(Collection<Future<Indexes>> collectionOfFutureIndexes, String internalTypeName) {
-        return contains(collectionOfFutureIndexes, "typeDeclarations", internalTypeName);
-    }
+	public static boolean containsInternalTypeName(Collection<Future<Indexes>> collectionOfFutureIndexes,
+	                                               String internalTypeName) {
+		return contains(collectionOfFutureIndexes,
+		                "typeDeclarations",
+		                internalTypeName);
+	}
 
-    @SuppressWarnings("unchecked")
-    public static List<Container.Entry> findInternalTypeName(Collection<Future<Indexes>> collectionOfFutureIndexes, String internalTypeName) {
-        return find(collectionOfFutureIndexes, "typeDeclarations", internalTypeName);
-    }
+	@SuppressWarnings("unchecked")
+	public static List<Container.Entry> findInternalTypeName(Collection<Future<Indexes>> collectionOfFutureIndexes,
+	                                                         String internalTypeName) {
+		return find(collectionOfFutureIndexes,
+		            "typeDeclarations",
+		            internalTypeName);
+	}
 
-    public static boolean contains(Collection<Future<Indexes>> collectionOfFutureIndexes, String indexName, String key) {
-        try {
-            for (Future<Indexes> futureIndexes : collectionOfFutureIndexes) {
-                if (futureIndexes.isDone()) {
-                    Map<String, Collection> index = futureIndexes.get().getIndex(indexName);
-                    if ((index != null) && (index.get(key) != null)) {
-                        return true;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            assert ExceptionUtil.printStackTrace(e);
-        }
+	public static boolean contains(Collection<Future<Indexes>> collectionOfFutureIndexes,
+	                               String indexName,
+	                               String key) {
+		try {
+			for (Future<Indexes> futureIndexes : collectionOfFutureIndexes) {
+				if (futureIndexes.isDone()) {
+					Map<String, Collection> index = futureIndexes.get()
+					                                             .getIndex(indexName);
+					if ((index != null) && (index.get(key) != null)) {
+						return true;
+					}
+				}
+			}
+		} catch (Exception e) {
+			assert ExceptionUtil.printStackTrace(e);
+		}
 
-        return false;
-    }
+		return false;
+	}
 
-    @SuppressWarnings("unchecked")
-    public static List<Container.Entry> find(Collection<Future<Indexes>> collectionOfFutureIndexes, String indexName, String key) {
-        ArrayList<Container.Entry> entries = new ArrayList<>();
+	@SuppressWarnings("unchecked")
+	public static List<Container.Entry> find(Collection<Future<Indexes>> collectionOfFutureIndexes,
+	                                         String indexName,
+	                                         String key) {
+		ArrayList<Container.Entry> entries = new ArrayList<>();
 
-        try {
-            for (Future<Indexes> futureIndexes : collectionOfFutureIndexes) {
-                if (futureIndexes.isDone()) {
-                    Map<String, Collection> index = futureIndexes.get().getIndex(indexName);
-                    if (index != null) {
-                        Collection<Container.Entry> collection = index.get(key);
-                        if (collection != null) {
-                            entries.addAll(collection);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            assert ExceptionUtil.printStackTrace(e);
-        }
+		try {
+			for (Future<Indexes> futureIndexes : collectionOfFutureIndexes) {
+				if (futureIndexes.isDone()) {
+					Map<String, Collection> index = futureIndexes.get()
+					                                             .getIndex(indexName);
+					if (index != null) {
+						Collection<Container.Entry> collection = index.get(key);
+						if (collection != null) {
+							entries.addAll(collection);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			assert ExceptionUtil.printStackTrace(e);
+		}
 
-        return entries;
-    }
+		return entries;
+	}
 }

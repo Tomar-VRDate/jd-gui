@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -16,70 +16,78 @@ import javax.swing.*;
 import java.util.*;
 
 public class ContextualActionsFactoryService {
-    protected static final ContextualActionsFactoryService CONTEXTUAL_ACTIONS_FACTORY_SERVICE = new ContextualActionsFactoryService();
+	protected static final ContextualActionsFactoryService      CONTEXTUAL_ACTIONS_FACTORY_SERVICE
+					                                                               = new ContextualActionsFactoryService();
+	protected static final ActionNameComparator                 COMPARATOR = new ActionNameComparator();
+	protected final        Collection<ContextualActionsFactory> providers  = ExtensionService.getInstance()
+	                                                                                         .load(ContextualActionsFactory.class);
 
-    public static ContextualActionsFactoryService getInstance() { return CONTEXTUAL_ACTIONS_FACTORY_SERVICE; }
+	public static ContextualActionsFactoryService getInstance() {return CONTEXTUAL_ACTIONS_FACTORY_SERVICE;}
 
-    protected static final ActionNameComparator COMPARATOR = new ActionNameComparator();
+	public Collection<Action> get(API api,
+	                              Container.Entry entry,
+	                              String fragment) {
+		HashMap<String, ArrayList<Action>> mapActions = new HashMap<>();
 
-    protected final Collection<ContextualActionsFactory> providers = ExtensionService.getInstance().load(ContextualActionsFactory.class);
+		for (ContextualActionsFactory provider : providers) {
+			Collection<Action> actions = provider.make(api,
+			                                           entry,
+			                                           fragment);
 
-    public Collection<Action> get(API api, Container.Entry entry, String fragment) {
-        HashMap<String, ArrayList<Action>> mapActions = new HashMap<>();
+			for (Action action : actions) {
+				String            groupName = (String) action.getValue(ContextualActionsFactory.GROUP_NAME);
+				ArrayList<Action> list      = mapActions.get(groupName);
 
-        for (ContextualActionsFactory provider : providers) {
-            Collection<Action> actions = provider.make(api, entry, fragment);
+				if (list == null) {
+					mapActions.put(groupName,
+					               list = new ArrayList<>());
+				}
 
-            for (Action action : actions) {
-                String groupName = (String)action.getValue(ContextualActionsFactory.GROUP_NAME);
-                ArrayList<Action> list = mapActions.get(groupName);
+				list.add(action);
+			}
+		}
 
-                if (list == null) {
-                    mapActions.put(groupName, list=new ArrayList<>());
-                }
+		if (!mapActions.isEmpty()) {
+			ArrayList<Action> result = new ArrayList<>();
 
-                list.add(action);
-            }
-        }
+			// Sort by group names
+			ArrayList<String> groupNames = new ArrayList<>(mapActions.keySet());
+			Collections.sort(groupNames);
 
-        if (!mapActions.isEmpty()) {
-            ArrayList<Action> result = new ArrayList<>();
+			for (String groupName : groupNames) {
+				if (!result.isEmpty()) {
+					// Add 'null' to mark a separator
+					result.add(null);
+				}
+				// Sort by names
+				ArrayList<Action> actions = mapActions.get(groupName);
+				Collections.sort(actions,
+				                 COMPARATOR);
+				result.addAll(actions);
+			}
 
-            // Sort by group names
-            ArrayList<String> groupNames = new ArrayList<>(mapActions.keySet());
-            Collections.sort(groupNames);
+			return result;
+		} else {
+			return Collections.emptyList();
+		}
+	}
 
-            for (String groupName : groupNames) {
-                if (! result.isEmpty()) {
-                    // Add 'null' to mark a separator
-                    result.add(null);
-                }
-                // Sort by names
-                ArrayList<Action> actions = mapActions.get(groupName);
-                Collections.sort(actions, COMPARATOR);
-                result.addAll(actions);
-            }
+	protected static class ActionNameComparator
+					implements Comparator<Action> {
+		@Override
+		public int compare(Action a1,
+		                   Action a2) {
+			String n1 = (String) a1.getValue(Action.NAME);
+			if (n1 == null) {
+				n1 = "";
+			}
 
-            return result;
-        } else {
-            return Collections.emptyList();
-        }
-    }
+			String n2 = (String) a2.getValue(Action.NAME);
+			if (n2 == null) {
+				n2 = "";
+			}
 
-    protected static class ActionNameComparator implements Comparator<Action> {
-        @Override
-        public int compare(Action a1, Action a2) {
-            String n1 = (String)a1.getValue(Action.NAME);
-            if (n1 == null) {
-                n1 = "";
-            }
-
-            String n2 = (String)a2.getValue(Action.NAME);
-            if (n2 == null) {
-                n2 = "";
-            }
-
-            return n1.compareTo(n2);
-        }
-    }
+			return n1.compareTo(n2);
+		}
+	}
 }

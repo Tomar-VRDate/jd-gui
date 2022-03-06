@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -15,41 +15,58 @@ import org.jd.gui.spi.Indexer;
 import java.util.Collection;
 import java.util.Map;
 
-public class JavaModuleFileIndexerProvider extends AbstractIndexerProvider {
+public class JavaModuleFileIndexerProvider
+				extends AbstractIndexerProvider {
 
-    @Override public String[] getSelectors() { return appendSelectors("*:file:*.jmod"); }
+	@SuppressWarnings("unchecked")
+	protected static void index(API api,
+	                            Container.Entry entry,
+	                            Indexes indexes,
+	                            Map<String, Collection> packageDeclarationIndex) {
+		for (Container.Entry e : entry.getChildren()) {
+			if (e.isDirectory()) {
+				String path = e.getPath();
 
-    @Override
-    public void index(API api, Container.Entry entry, Indexes indexes) {
-        for (Container.Entry e : entry.getChildren()) {
-            if (e.isDirectory() && e.getPath().equals("classes")) {
-                Map<String, Collection> packageDeclarationIndex = indexes.getIndex("packageDeclarations");
+				if (!path.startsWith("classes/META-INF")) {
+					packageDeclarationIndex.get(path.substring(8))
+					                       .add(e); // 8 = "classes/".length()
+				}
 
-                // Index module-info, packages and CLASS files
-                index(api, e, indexes, packageDeclarationIndex);
-                break;
-            }
-        }
-    }
+				index(api,
+				      e,
+				      indexes,
+				      packageDeclarationIndex);
+			} else {
+				Indexer indexer = api.getIndexer(e);
 
-    @SuppressWarnings("unchecked")
-    protected static void index(API api, Container.Entry entry, Indexes indexes, Map<String, Collection> packageDeclarationIndex) {
-        for (Container.Entry e : entry.getChildren()) {
-            if (e.isDirectory()) {
-                String path = e.getPath();
+				if (indexer != null) {
+					indexer.index(api,
+					              e,
+					              indexes);
+				}
+			}
+		}
+	}
 
-                if (!path.startsWith("classes/META-INF")) {
-                    packageDeclarationIndex.get(path.substring(8)).add(e); // 8 = "classes/".length()
-                }
+	@Override
+	public String[] getSelectors() {return appendSelectors("*:file:*.jmod");}
 
-                index(api, e, indexes, packageDeclarationIndex);
-            } else {
-                Indexer indexer = api.getIndexer(e);
+	@Override
+	public void index(API api,
+	                  Container.Entry entry,
+	                  Indexes indexes) {
+		for (Container.Entry e : entry.getChildren()) {
+			if (e.isDirectory() && e.getPath()
+			                        .equals("classes")) {
+				Map<String, Collection> packageDeclarationIndex = indexes.getIndex("packageDeclarations");
 
-                if (indexer != null) {
-                    indexer.index(api, e, indexes);
-                }
-            }
-        }
-    }
+				// Index module-info, packages and CLASS files
+				index(api,
+				      e,
+				      indexes,
+				      packageDeclarationIndex);
+				break;
+			}
+		}
+	}
 }

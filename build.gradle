@@ -15,7 +15,7 @@ apply plugin: 'edu.sc.seis.launch4j'
 apply plugin: 'nebula.ospackage'
 
 // Common configuration //
-rootProject.version='1.6.6'
+rootProject.version = '2022.3.6'
 rootProject.ext.set('jdCoreVersion', '1.1.3')
 targetCompatibility = '1.8'
 
@@ -115,7 +115,7 @@ launch4j {
     version = textVersion = project.version
     fileDescription = productName = 'JD-GUI'
     errTitle 'JD-GUI Windows Wrapper'
-    copyright 'JD-GUI (C) 2008-2019 Emmanuel Dupuy'
+    copyright 'JD-GUI (C) 2008-2022 Emmanuel Dupuy'
     icon projectDir.path + '/src/launch4j/resources/images/jd-gui.ico'
     jar projectDir.path + '/' + proguard.outJarFiles[0]
     bundledJrePath = '%JAVA_HOME%'
@@ -132,15 +132,15 @@ ospackage {
     packageDescription 'JD-GUI, a standalone graphical utility that displays Java sources from CLASS files'
     packageGroup 'java'
     packageName project.name
-    release '0'
+    release '2022.3.6'
     summary 'A Java Decompiler'
     url 'https://github.com/java-decompiler/jd-gui'
 
     into '/opt/' + project.name
-    from (proguard.outJarFiles[0]) {
+    from(proguard.outJarFiles[0]) {
         fileMode 0755
     }
-    from ('src/linux/resources/') {
+    from('src/linux/resources/') {
         fileMode 0755
     }
     from 'LICENSE', 'NOTICE', 'README.md'
@@ -156,7 +156,7 @@ distributions {
             from('src/osx/resources') {
                 include 'Info.plist'
                 expand VERSION: project.version,
-                       JAR: file(proguard.outJarFiles[0]).name
+                        JAR: file(proguard.outJarFiles[0]).name
             }
         }
         into('JD-GUI.app/Contents/MacOS') {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -21,192 +21,247 @@ import org.jd.gui.util.xml.AbstractXmlPathFinder;
 import java.awt.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.Future;
 
-public class WebXmlFilePage extends TypeReferencePage implements UriGettable, IndexesChangeListener {
-    protected API api;
-    protected Container.Entry entry;
-    protected Collection<Future<Indexes>> collectionOfFutureIndexes;
+public class WebXmlFilePage
+				extends TypeReferencePage
+				implements UriGettable,
+				           IndexesChangeListener {
+	protected static List<String> typeHyperlinkPaths = Arrays.asList("web-app/filter/filter-class",
+	                                                                 "web-app/listener/listener-class",
+	                                                                 "web-app/servlet/servlet-class");
+	protected static List<String> pathHyperlinkPaths = Arrays.asList("web-app/jsp-config/taglib/taglib-location",
+	                                                                 "web-app/welcome-file-list/welcome-file",
+	                                                                 "web-app/login-config/form-login-config/form-login"
+	                                                                 + "-page",
+	                                                                 "web-app/login-config/form-login-config/form-error"
+	                                                                 + "-page",
+	                                                                 "web-app/jsp-config/jsp-property-group/include"
+	                                                                 + "-prelude",
+	                                                                 "web-app/jsp-config/jsp-property-group/include"
+	                                                                 + "-coda");
+	protected static List<String> hyperlinkPaths     = new ArrayList<>(typeHyperlinkPaths.size()
+	                                                                   + pathHyperlinkPaths.size());
 
-    public WebXmlFilePage(API api, Container.Entry entry) {
-        this.api = api;
-        this.entry = entry;
-        // Load content file
-        String text = TextReader.getText(entry.getInputStream());
-        // Create hyperlinks
-        new PathFinder().find(text);
-        // Display
-        setText(text);
-    }
+	static {
+		hyperlinkPaths.addAll(typeHyperlinkPaths);
+		hyperlinkPaths.addAll(pathHyperlinkPaths);
+	}
 
-    public String getSyntaxStyle() { return SyntaxConstants.SYNTAX_STYLE_XML; }
+	protected API                         api;
+	protected Container.Entry             entry;
+	protected Collection<Future<Indexes>> collectionOfFutureIndexes;
 
-    protected boolean isHyperlinkEnabled(HyperlinkData hyperlinkData) { return ((TypeHyperlinkData)hyperlinkData).enabled; }
+	public WebXmlFilePage(API api,
+	                      Container.Entry entry) {
+		this.api = api;
+		this.entry = entry;
+		// Load content file
+		String text = TextReader.getText(entry.getInputStream());
+		// Create hyperlinks
+		new PathFinder().find(text);
+		// Display
+		setText(text);
+	}
 
-    protected void openHyperlink(int x, int y, HyperlinkData hyperlinkData) {
-        TypeHyperlinkData data = (TypeHyperlinkData)hyperlinkData;
+	public static Container.Entry searchEntry(Container.Entry parent,
+	                                          String path) {
+		if (path.charAt(0) == '/') {
+			path = path.substring(1);
+		}
+		return recursiveSearchEntry(parent,
+		                            path);
+	}
 
-        if (data.enabled) {
-            try {
-                // Save current position in history
-                Point location = textArea.getLocationOnScreen();
-                int offset = textArea.viewToModel(new Point(x-location.x, y-location.y));
-                URI uri = entry.getUri();
-                api.addURI(new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), "position=" + offset, null));
+	public static Container.Entry recursiveSearchEntry(Container.Entry parent,
+	                                                   String path) {
+		Container.Entry entry = null;
 
-                // Open link
-                if (hyperlinkData instanceof PathHyperlinkData) {
-                    PathHyperlinkData d = (PathHyperlinkData)hyperlinkData;
-                    String path = d.path;
-                    Container.Entry entry = searchEntry(this.entry.getContainer().getRoot(), path);
-                    if (entry != null) {
-                        api.openURI(x, y, Collections.singletonList(entry), null, path);
-                    }
-                } else {
-                    String internalTypeName = data.internalTypeName;
-                    List<Container.Entry> entries = IndexesUtil.findInternalTypeName(collectionOfFutureIndexes, internalTypeName);
-                    String rootUri = entry.getContainer().getRoot().getUri().toString();
-                    ArrayList<Container.Entry> sameContainerEntries = new ArrayList<>();
+		for (Container.Entry child : parent.getChildren()) {
+			if (path.equals(child.getPath())) {
+				entry = child;
+				break;
+			}
+		}
 
-                    for (Container.Entry entry : entries) {
-                        if (entry.getUri().toString().startsWith(rootUri)) {
-                            sameContainerEntries.add(entry);
-                        }
-                    }
+		if (entry != null) {
+			return entry;
+		} else {
+			for (Container.Entry child : parent.getChildren()) {
+				if (path.startsWith(child.getPath() + '/')) {
+					entry = child;
+					break;
+				}
+			}
 
-                    if (sameContainerEntries.size() > 0) {
-                        api.openURI(x, y, sameContainerEntries, null, data.internalTypeName);
-                    } else if (entries.size() > 0) {
-                        api.openURI(x, y, entries, null, data.internalTypeName);
-                    }
-                }
-            } catch (URISyntaxException e) {
-                assert ExceptionUtil.printStackTrace(e);
-            }
-        }
-    }
+			return (entry != null)
+			       ? searchEntry(entry,
+			                     path)
+			       : null;
+		}
+	}
 
-    public static Container.Entry searchEntry(Container.Entry parent, String path) {
-        if (path.charAt(0) == '/')
-            path = path.substring(1);
-        return recursiveSearchEntry(parent, path);
-    }
+	public String getSyntaxStyle()                                    {return SyntaxConstants.SYNTAX_STYLE_XML;}
 
-    public static Container.Entry recursiveSearchEntry(Container.Entry parent, String path) {
-        Container.Entry entry = null;
+	protected boolean isHyperlinkEnabled(HyperlinkData hyperlinkData) {return ((TypeHyperlinkData) hyperlinkData).enabled;}
 
-        for (Container.Entry child : parent.getChildren()) {
-            if (path.equals(child.getPath())) {
-                entry = child;
-                break;
-            }
-        }
+	protected void openHyperlink(int x,
+	                             int y,
+	                             HyperlinkData hyperlinkData) {
+		TypeHyperlinkData data = (TypeHyperlinkData) hyperlinkData;
 
-        if (entry != null) {
-            return entry;
-        } else {
-            for (Container.Entry child : parent.getChildren()) {
-                if (path.startsWith(child.getPath() + '/')) {
-                    entry = child;
-                    break;
-                }
-            }
+		if (data.enabled) {
+			try {
+				// Save current position in history
+				Point location = textArea.getLocationOnScreen();
+				int offset = textArea.viewToModel(new Point(x - location.x,
+				                                            y - location.y));
+				URI uri = entry.getUri();
+				api.addURI(new URI(uri.getScheme(),
+				                   uri.getAuthority(),
+				                   uri.getPath(),
+				                   "position=" + offset,
+				                   null));
 
-            return (entry != null) ? searchEntry(entry, path) : null;
-        }
-    }
+				// Open link
+				if (hyperlinkData instanceof PathHyperlinkData) {
+					PathHyperlinkData d    = (PathHyperlinkData) hyperlinkData;
+					String            path = d.path;
+					Container.Entry entry = searchEntry(this.entry.getContainer()
+					                                              .getRoot(),
+					                                    path);
+					if (entry != null) {
+						api.openURI(x,
+						            y,
+						            Collections.singletonList(entry),
+						            null,
+						            path);
+					}
+				} else {
+					String internalTypeName = data.internalTypeName;
+					List<Container.Entry> entries = IndexesUtil.findInternalTypeName(collectionOfFutureIndexes,
+					                                                                 internalTypeName);
+					String rootUri = entry.getContainer()
+					                      .getRoot()
+					                      .getUri()
+					                      .toString();
+					ArrayList<Container.Entry> sameContainerEntries = new ArrayList<>();
 
-    // --- UriGettable --- //
-    public URI getUri() { return entry.getUri(); }
+					for (Container.Entry entry : entries) {
+						if (entry.getUri()
+						         .toString()
+						         .startsWith(rootUri)) {
+							sameContainerEntries.add(entry);
+						}
+					}
 
-    // --- ContentSavable --- //
-    public String getFileName() {
-        String path = entry.getPath();
-        int index = path.lastIndexOf('/');
-        return path.substring(index+1);
-    }
+					if (sameContainerEntries.size() > 0) {
+						api.openURI(x,
+						            y,
+						            sameContainerEntries,
+						            null,
+						            data.internalTypeName);
+					} else if (entries.size() > 0) {
+						api.openURI(x,
+						            y,
+						            entries,
+						            null,
+						            data.internalTypeName);
+					}
+				}
+			} catch (URISyntaxException e) {
+				assert ExceptionUtil.printStackTrace(e);
+			}
+		}
+	}
 
-    // --- IndexesChangeListener --- //
-    public void indexesChanged(Collection<Future<Indexes>> collectionOfFutureIndexes) {
-        // Update the list of containers
-        this.collectionOfFutureIndexes = collectionOfFutureIndexes;
-        // Refresh links
-        boolean refresh = false;
+	// --- UriGettable --- //
+	public URI getUri() {return entry.getUri();}
 
-        for (Map.Entry<Integer, HyperlinkData> entry : hyperlinks.entrySet()) {
-            TypeHyperlinkData data = (TypeHyperlinkData)entry.getValue();
-            boolean enabled;
+	// --- ContentSavable --- //
+	public String getFileName() {
+		String path  = entry.getPath();
+		int    index = path.lastIndexOf('/');
+		return path.substring(index + 1);
+	}
 
-            if (data instanceof PathHyperlinkData) {
-                PathHyperlinkData d = (PathHyperlinkData)data;
-                enabled = searchEntry(this.entry.getContainer().getRoot(), d.path) != null;
-            } else {
-                String internalTypeName = data.internalTypeName;
-                enabled = IndexesUtil.containsInternalTypeName(collectionOfFutureIndexes, internalTypeName);
-            }
+	// --- IndexesChangeListener --- //
+	public void indexesChanged(Collection<Future<Indexes>> collectionOfFutureIndexes) {
+		// Update the list of containers
+		this.collectionOfFutureIndexes = collectionOfFutureIndexes;
+		// Refresh links
+		boolean refresh = false;
 
-            if (data.enabled != enabled) {
-                data.enabled = enabled;
-                refresh = true;
-            }
-        }
+		for (Map.Entry<Integer, HyperlinkData> entry : hyperlinks.entrySet()) {
+			TypeHyperlinkData data = (TypeHyperlinkData) entry.getValue();
+			boolean           enabled;
 
-        if (refresh) {
-            textArea.repaint();
-        }
-    }
+			if (data instanceof PathHyperlinkData) {
+				PathHyperlinkData d = (PathHyperlinkData) data;
+				enabled = searchEntry(this.entry.getContainer()
+				                                .getRoot(),
+				                      d.path) != null;
+			} else {
+				String internalTypeName = data.internalTypeName;
+				enabled = IndexesUtil.containsInternalTypeName(collectionOfFutureIndexes,
+				                                               internalTypeName);
+			}
 
-    public static class PathHyperlinkData extends TypeHyperlinkData {
-        public boolean enabled;
-        public String path;
+			if (data.enabled != enabled) {
+				data.enabled = enabled;
+				refresh = true;
+			}
+		}
 
-        PathHyperlinkData(int startPosition, int endPosition, String path) {
-            super(startPosition, endPosition, null);
-            this.enabled = false;
-            this.path = path;
-        }
-    }
+		if (refresh) {
+			textArea.repaint();
+		}
+	}
 
-    protected static List<String> typeHyperlinkPaths = Arrays.asList(
-        "web-app/filter/filter-class",
-        "web-app/listener/listener-class",
-        "web-app/servlet/servlet-class");
+	public static class PathHyperlinkData
+					extends TypeHyperlinkData {
+		public boolean enabled;
+		public String  path;
 
-    protected static List<String> pathHyperlinkPaths = Arrays.asList(
-        "web-app/jsp-config/taglib/taglib-location",
-        "web-app/welcome-file-list/welcome-file",
-        "web-app/login-config/form-login-config/form-login-page",
-        "web-app/login-config/form-login-config/form-error-page",
-        "web-app/jsp-config/jsp-property-group/include-prelude",
-        "web-app/jsp-config/jsp-property-group/include-coda");
+		PathHyperlinkData(int startPosition,
+		                  int endPosition,
+		                  String path) {
+			super(startPosition,
+			      endPosition,
+			      null);
+			this.enabled = false;
+			this.path = path;
+		}
+	}
 
-    protected static List<String> hyperlinkPaths = new ArrayList<>(typeHyperlinkPaths.size() + pathHyperlinkPaths.size());
+	public class PathFinder
+					extends AbstractXmlPathFinder {
+		public PathFinder() {
+			super(hyperlinkPaths);
+		}
 
-    static {
-        hyperlinkPaths.addAll(typeHyperlinkPaths);
-        hyperlinkPaths.addAll(pathHyperlinkPaths);
-    }
+		public void handle(String path,
+		                   String text,
+		                   int position) {
+			String trim = text.trim();
+			if (trim != null) {
+				int startIndex = position + text.indexOf(trim);
+				int endIndex   = startIndex + trim.length();
 
-    public class PathFinder extends AbstractXmlPathFinder {
-        public PathFinder() {
-            super(hyperlinkPaths);
-        }
-
-        public void handle(String path, String text, int position) {
-            String trim = text.trim();
-            if (trim != null) {
-                int startIndex = position + text.indexOf(trim);
-                int endIndex = startIndex + trim.length();
-
-                if (pathHyperlinkPaths.contains(path)) {
-                    addHyperlink(new PathHyperlinkData(startIndex, endIndex, trim));
-                } else {
-                    String internalTypeName = trim.replace('.', '/');
-                    addHyperlink(new TypeHyperlinkData(startIndex, endIndex, internalTypeName));
-                }
-            }
-        }
-    }
+				if (pathHyperlinkPaths.contains(path)) {
+					addHyperlink(new PathHyperlinkData(startIndex,
+					                                   endIndex,
+					                                   trim));
+				} else {
+					String internalTypeName = trim.replace('.',
+					                                       '/');
+					addHyperlink(new TypeHyperlinkData(startIndex,
+					                                   endIndex,
+					                                   internalTypeName));
+				}
+			}
+		}
+	}
 }

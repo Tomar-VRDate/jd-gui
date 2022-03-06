@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -12,25 +12,25 @@ import java.awt.*;
 import java.util.Map;
 
 public interface PreferencesPanel {
-    String getPreferencesGroupTitle();
+	String getPreferencesGroupTitle();
 
-    String getPreferencesPanelTitle();
+	String getPreferencesPanelTitle();
 
-    JComponent getPanel();
+	JComponent getPanel();
 
-    void init(Color errorBackgroundColor);
+	void init(Color errorBackgroundColor);
 
-    boolean isActivated();
+	boolean isActivated();
 
-    void loadPreferences(Map<String, String> preferences);
+	void loadPreferences(Map<String, String> preferences);
 
-    void savePreferences(Map<String, String> preferences);
+	void savePreferences(Map<String, String> preferences);
 
-    boolean arePreferencesValid();
+	boolean arePreferencesValid();
 
-    void addPreferencesChangeListener(PreferencesPanelChangeListener listener);
+	void addPreferencesChangeListener(PreferencesPanelChangeListener listener);
 
-    interface PreferencesPanelChangeListener {
-        void preferencesPanelChanged(PreferencesPanel source);
-    }
+	interface PreferencesPanelChangeListener {
+		void preferencesPanelChanged(PreferencesPanel source);
+	}
 }
