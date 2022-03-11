@@ -13,13 +13,22 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Objects;
 
 /**
  * See: https://www.ailis.de/~k/archives/67-Workaround-for-borderless-Java-Swing-menus-on-Linux.html
  */
+@SuppressWarnings("UnnecessaryLocalVariable")
 public class SwingUtil {
+	public static final String RESOURCE_PATH                         = "org/jd/gui/images/";
+	public static final String RESOURCES_PATH                        = "./src/main/resources/" + RESOURCE_PATH;
+	public static final String LOADING_RESOURCE_OF_FROM_FORMAT       = "Loading Resource of %s from %s%n";
+	public static final String ERROR_LOADING_RESOURCE_OF_FROM_FORMAT = "Error " + LOADING_RESOURCE_OF_FROM_FORMAT;
 	/*
 	 * This is free and unencumbered software released into the public domain.
 	 *
@@ -160,13 +169,95 @@ public class SwingUtil {
 		}
 	}
 
-	public static Image getImage(String iconPath) {
-		return Toolkit.getDefaultToolkit()
-		              .getImage(SwingUtil.class.getResource(iconPath));
+	public static ImageIcon newImageIconFromFile(String iconFile) {
+		ImageIcon imageIcon = newImageIcon(RESOURCE_PATH,
+		                                   iconFile);
+		return imageIcon;
 	}
 
+	private static ImageIcon newImageIcon(String iconsPath,
+	                                      String iconFile) {
+		String resourcePath = getResourcePath(iconsPath,
+		                                      iconFile);
+		ImageIcon imageIcon = newImageIcon(resourcePath);
+		return imageIcon;
+	}
+
+	public static Image newImageFromFile(String iconFile) {
+		Image image = getImageFromFile(RESOURCE_PATH,
+		                               iconFile);
+		return image;
+	}
+
+	private static Image getImageFromFile(String iconsPath,
+	                                      String iconFile) {
+		String resourcePath = getResourcePath(iconsPath,
+		                                      iconFile);
+		Image image = newImage(resourcePath);
+		return image;
+	}
+
+	private static String getResourcePath(String iconsPath,
+	                                      String iconFile) {
+		String resourceName = String.format("%s%s",
+		                                    iconsPath,
+		                                    iconFile);
+		return resourceName;
+	}
+
+
 	public static ImageIcon newImageIcon(String iconPath) {
-		return new ImageIcon(getImage(iconPath));
+		Image     image     = newImage(iconPath);
+		ImageIcon imageIcon = new ImageIcon(image);
+		return imageIcon;
+	}
+
+	public static Image getImage(String iconPath) {
+		Image image = newImage(iconPath);
+		return image;
+	}
+
+	public static Image newImage(String iconPath) {
+		Image imageFromResource = getImageFromResource(SwingUtil.class,
+		                                               iconPath);
+		return imageFromResource;
+	}
+
+	public static Image getImageFromResource(Class<?> aClass,
+	                                         String resourcePath) {
+		URL resourceURL = aClass.getResource(resourcePath);
+		if (resourceURL == null) {
+			//			System.err.printf(ERROR_LOADING_RESOURCE_OF_FROM_FORMAT,
+			//			                  aClass.getName(),
+			//			                  resourcePath);
+			String resourceFilePath = resourcePath.replace(RESOURCE_PATH,
+			                                               RESOURCES_PATH);
+			File resourceFile = new File(resourceFilePath);
+			if (!resourceFile.exists()) {
+				resourceFilePath = resourceFile.getAbsolutePath();
+				System.err.printf(ERROR_LOADING_RESOURCE_OF_FROM_FORMAT,
+				                  aClass.getName(),
+				                  resourceFilePath);
+				return null;
+			}
+			try {
+				resourceURL = resourceFile.getAbsoluteFile()
+				                          .toURL();
+			} catch (MalformedURLException e) {
+				System.err.printf(ERROR_LOADING_RESOURCE_OF_FROM_FORMAT,
+				                  aClass.getName(),
+				                  resourcePath);
+				e.printStackTrace();
+				return null;
+			}
+		}
+		URL url = Objects.requireNonNull(resourceURL);
+		System.out.printf(LOADING_RESOURCE_OF_FROM_FORMAT,
+		                  aClass.getName(),
+		                  url);
+		Image image = Toolkit.getDefaultToolkit()
+		                     .getImage(url);
+		return image;
 	}
 
 	public static Action newAction(String name,
