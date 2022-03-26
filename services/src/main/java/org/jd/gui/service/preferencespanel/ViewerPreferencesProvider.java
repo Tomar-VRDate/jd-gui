@@ -99,7 +99,7 @@ public class ViewerPreferencesProvider
 	@Override
 	public boolean arePreferencesValid() {
 		try {
-			int i = Integer.valueOf(fontSizeTextField.getText());
+			int i = Integer.parseInt(fontSizeTextField.getText());
 			return (i >= MIN_VALUE) && (i <= MAX_VALUE);
 		} catch (NumberFormatException e) {
 			assert ExceptionUtil.printStackTrace(e);

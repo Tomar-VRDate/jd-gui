@@ -7,30 +7,31 @@
 
 package org.jd.gui.service.preferencespanel;
 
+import org.jd.gui.spi.GenericPreferencesPanel;
 import org.jd.gui.spi.PreferencesPanel;
+import org.jd.gui.util.swing.Preference;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ClassFileSaverPreferencesProvider
 				extends JPanel
-				implements PreferencesPanel {
-	protected static final String WRITE_LINE_NUMBERS = "ClassFileSaverPreferences.writeLineNumbers";
-	protected static final String WRITE_METADATA     = "ClassFileSaverPreferences.writeMetadata";
+				implements PreferencesPanel,
+				           GenericPreferencesPanel {
+	private static LinkedHashMap<Preference, List<AbstractButton>> preferenceAbstractButtonsMap = null;
 
-	protected JCheckBox writeLineNumbersCheckBox;
-	protected JCheckBox writeMetadataCheckBox;
 
 	public ClassFileSaverPreferencesProvider() {
 		super(new GridLayout(0,
 		                     1));
 
-		writeLineNumbersCheckBox = new JCheckBox("Write original line numbers");
-		writeMetadataCheckBox = new JCheckBox("Write metadata");
-
-		add(writeLineNumbersCheckBox);
-		add(writeMetadataCheckBox);
+		preferenceAbstractButtonsMap
+						= GenericPreferencesPanel.toAbstractButtonsByPreferenceDescriptionMap(ClassFileSaverPreferences.values(),
+						                                                                      this);
 	}
 
 	// --- PreferencesPanel --- //
@@ -51,16 +52,14 @@ public class ClassFileSaverPreferencesProvider
 
 	@Override
 	public void loadPreferences(Map<String, String> preferences) {
-		writeLineNumbersCheckBox.setSelected(!"false".equals(preferences.get(WRITE_LINE_NUMBERS)));
-		writeMetadataCheckBox.setSelected(!"false".equals(preferences.get(WRITE_METADATA)));
+		GenericPreferencesPanel.load(preferenceAbstractButtonsMap,
+		                             preferences);
 	}
 
 	@Override
 	public void savePreferences(Map<String, String> preferences) {
-		preferences.put(WRITE_LINE_NUMBERS,
-		                Boolean.toString(writeLineNumbersCheckBox.isSelected()));
-		preferences.put(WRITE_METADATA,
-		                Boolean.toString(writeMetadataCheckBox.isSelected()));
+		GenericPreferencesPanel.save(preferences,
+		                             preferenceAbstractButtonsMap);
 	}
 
 	@Override
@@ -68,4 +67,15 @@ public class ClassFileSaverPreferencesProvider
 
 	@Override
 	public void addPreferencesChangeListener(PreferencesPanel.PreferencesPanelChangeListener listener) {}
+
+	@Override
+	public Component add(Component component) {
+		return super.add(component);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent actionEvent) {
+		GenericPreferencesPanel.super.actionPerformed(actionEvent);
+	}
 }
+

@@ -29,6 +29,8 @@ public class SwingUtil {
 	public static final String RESOURCES_PATH                        = "./src/main/resources/" + RESOURCE_PATH;
 	public static final String LOADING_RESOURCE_OF_FROM_FORMAT       = "Loading Resource of %s from %s%n";
 	public static final String ERROR_LOADING_RESOURCE_OF_FROM_FORMAT = "Error " + LOADING_RESOURCE_OF_FROM_FORMAT;
+	public static final String PREFERENCE                            = "preference";
+	public static final String PREFERENCE_VALUE                      = "preferenceValue";
 	/*
 	 * This is free and unencumbered software released into the public domain.
 	 *
@@ -262,11 +264,11 @@ public class SwingUtil {
 
 	public static Action newAction(String name,
 	                               boolean enable,
-	                               ActionListener listener) {
+	                               ActionListener actionListener) {
 		Action action = new AbstractAction(name) {
 			@Override
 			public void actionPerformed(ActionEvent actionEvent) {
-				listener.actionPerformed(actionEvent);
+				actionListener.actionPerformed(actionEvent);
 			}
 		};
 		action.setEnabled(enable);
@@ -276,10 +278,10 @@ public class SwingUtil {
 	public static Action newAction(String name,
 	                               ImageIcon icon,
 	                               boolean enable,
-	                               ActionListener listener) {
+	                               ActionListener actionListener) {
 		Action action = newAction(name,
 		                          enable,
-		                          listener);
+		                          actionListener);
 		action.putValue(Action.SMALL_ICON,
 		                icon);
 		return action;
@@ -287,11 +289,11 @@ public class SwingUtil {
 
 	public static Action newAction(ImageIcon icon,
 	                               boolean enable,
-	                               ActionListener listener) {
+	                               ActionListener actionListener) {
 		Action action = newAction(null,
 		                          icon,
 		                          enable,
-		                          listener);
+		                          actionListener);
 		action.putValue(Action.SMALL_ICON,
 		                icon);
 		return action;
@@ -301,11 +303,11 @@ public class SwingUtil {
 	                               ImageIcon icon,
 	                               boolean enable,
 	                               String shortDescription,
-	                               ActionListener listener) {
+	                               ActionListener actionListener) {
 		Action action = newAction(name,
 		                          icon,
 		                          enable,
-		                          listener);
+		                          actionListener);
 		action.putValue(Action.SHORT_DESCRIPTION,
 		                shortDescription);
 		return action;
@@ -314,10 +316,10 @@ public class SwingUtil {
 	public static Action newAction(String name,
 	                               boolean enable,
 	                               String shortDescription,
-	                               ActionListener listener) {
+	                               ActionListener actionListener) {
 		Action action = newAction(name,
 		                          enable,
-		                          listener);
+		                          actionListener);
 		action.putValue(Action.SHORT_DESCRIPTION,
 		                shortDescription);
 		return action;

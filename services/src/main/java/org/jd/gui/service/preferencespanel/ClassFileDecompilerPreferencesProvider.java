@@ -7,31 +7,31 @@
 
 package org.jd.gui.service.preferencespanel;
 
+import org.jd.gui.spi.GenericPreferencesPanel;
 import org.jd.gui.spi.PreferencesPanel;
+import org.jd.gui.util.swing.Preference;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ClassFileDecompilerPreferencesProvider
 				extends JPanel
-				implements PreferencesPanel {
-	protected static final String ESCAPE_UNICODE_CHARACTERS = "ClassFileDecompilerPreferences.escapeUnicodeCharacters";
-	protected static final String REALIGN_LINE_NUMBERS      = "ClassFileDecompilerPreferences.realignLineNumbers";
-
-	protected PreferencesPanel.PreferencesPanelChangeListener listener = null;
-	protected JCheckBox                                       escapeUnicodeCharactersCheckBox;
-	protected JCheckBox                                       realignLineNumbersCheckBox;
+				implements PreferencesPanel,
+				           GenericPreferencesPanel {
+	private static LinkedHashMap<Preference, List<AbstractButton>> preferenceAbstractButtonsMap = null;
+	protected      PreferencesPanel.PreferencesPanelChangeListener listener                     = null;
 
 	public ClassFileDecompilerPreferencesProvider() {
 		super(new GridLayout(0,
 		                     1));
-
-		escapeUnicodeCharactersCheckBox = new JCheckBox("Escape unicode characters");
-		realignLineNumbersCheckBox = new JCheckBox("Realign line numbers");
-
-		add(escapeUnicodeCharactersCheckBox);
-		add(realignLineNumbersCheckBox);
+		preferenceAbstractButtonsMap
+						=
+						GenericPreferencesPanel.toAbstractButtonsByPreferenceDescriptionMap(ClassFileDecompilerPreference.values(),
+						                                                                      this);
 	}
 
 	// --- PreferencesPanel --- //
@@ -52,16 +52,14 @@ public class ClassFileDecompilerPreferencesProvider
 
 	@Override
 	public void loadPreferences(Map<String, String> preferences) {
-		escapeUnicodeCharactersCheckBox.setSelected("true".equals(preferences.get(ESCAPE_UNICODE_CHARACTERS)));
-		realignLineNumbersCheckBox.setSelected("true".equals(preferences.get(REALIGN_LINE_NUMBERS)));
+		GenericPreferencesPanel.load(preferenceAbstractButtonsMap,
+		                             preferences);
 	}
 
 	@Override
 	public void savePreferences(Map<String, String> preferences) {
-		preferences.put(ESCAPE_UNICODE_CHARACTERS,
-		                Boolean.toString(escapeUnicodeCharactersCheckBox.isSelected()));
-		preferences.put(REALIGN_LINE_NUMBERS,
-		                Boolean.toString(realignLineNumbersCheckBox.isSelected()));
+		GenericPreferencesPanel.save(preferences,
+		                             preferenceAbstractButtonsMap);
 	}
 
 	@Override
@@ -69,4 +67,15 @@ public class ClassFileDecompilerPreferencesProvider
 
 	@Override
 	public void addPreferencesChangeListener(PreferencesPanel.PreferencesPanelChangeListener listener) {}
+
+	@Override
+	public Component add(Component component) {
+		return super.add(component);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent actionEvent) {
+		GenericPreferencesPanel.super.actionPerformed(actionEvent);
+	}
 }
+

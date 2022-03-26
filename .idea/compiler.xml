@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="1.8" />
+    <bytecodeTargetLevel target="1.8">
+      <module name="jd-gui.antlr" target="11" />
+      <module name="jd-gui.service" target="11" />
+      <module name="jd-gui.service-controllers" target="11" />
+      <module name="jd-gui.view-model" target="11" />
+    </bytecodeTargetLevel>
   </component>
 </project>

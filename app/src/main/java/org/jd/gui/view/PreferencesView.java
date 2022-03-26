@@ -170,9 +170,9 @@ public class PreferencesView
 				preferredHeight = maxHeight;
 			}
 
-			preferencesScrollPane.setPreferredSize(new Dimension(400,
+			preferencesScrollPane.setPreferredSize(new Dimension(600,
 			                                                     preferredHeight));
-			preferencesDialog.setMinimumSize(new Dimension(300,
+			preferencesDialog.setMinimumSize(new Dimension(600,
 			                                               200));
 
 			// Prepare to display

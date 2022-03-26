@@ -81,7 +81,7 @@ public class DirectoryIndexerPreferencesProvider
 	@Override
 	public boolean arePreferencesValid() {
 		try {
-			int i = Integer.valueOf(maximumDepthTextField.getText());
+			int i = Integer.parseInt(maximumDepthTextField.getText());
 			return (i > 0) && (i <= MAX_VALUE);
 		} catch (NumberFormatException e) {
 			assert ExceptionUtil.printStackTrace(e);
