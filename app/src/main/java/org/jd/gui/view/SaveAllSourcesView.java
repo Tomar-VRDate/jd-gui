@@ -17,17 +17,20 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 
 public class SaveAllSourcesView {
-	protected JDialog      saveAllSourcesDialog;
-	protected JLabel       saveAllSourcesFromLabel;
-	protected JLabel       saveAllSourcesToLabel;
-	protected JProgressBar saveAllSourcesProgressBar;
+	public static final String       SAVE_ALL_SOURCES             = "Save All Sources";
+	public static final String       SAVE_ALL_SOURCES_VIEW_CANCEL = "SaveAllSourcesView.cancel";
+	public static final String       CANCEL                       = "Cancel";
+	protected           JDialog      saveAllSourcesDialog;
+	protected           JLabel       saveAllSourcesFromLabel;
+	protected           JLabel       saveAllSourcesToLabel;
+	protected           JProgressBar saveAllSourcesProgressBar;
 
 	public SaveAllSourcesView(JFrame mainFrame,
 	                          Runnable cancelCallback) {
 		// Build GUI
 		SwingUtil.invokeLater(() -> {
 			saveAllSourcesDialog = new JDialog(mainFrame,
-			                                   "Save All Sources",
+			                                   SAVE_ALL_SOURCES,
 			                                   false);
 			saveAllSourcesDialog.setResizable(false);
 			saveAllSourcesDialog.addWindowListener(new WindowAdapter() {
@@ -63,7 +66,7 @@ public class SaveAllSourcesView {
 			// Button "Cancel"
 			hbox = Box.createHorizontalBox();
 			hbox.add(Box.createHorizontalGlue());
-			JButton saveAllSourcesCancelButton = new JButton("Cancel");
+			JButton saveAllSourcesCancelButton = new JButton(CANCEL);
 			Action saveAllSourcesCancelActionListener = new AbstractAction() {
 				public void actionPerformed(ActionEvent actionEvent) {
 					cancelCallback.run();
@@ -80,9 +83,9 @@ public class SaveAllSourcesView {
 			rootPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
 			        .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE,
 			                                    0),
-			             "SaveAllSourcesView.cancel");
+			             SAVE_ALL_SOURCES_VIEW_CANCEL);
 			rootPane.getActionMap()
-			        .put("SaveAllSourcesView.cancel",
+			        .put(SAVE_ALL_SOURCES_VIEW_CANCEL,
 			             saveAllSourcesCancelActionListener);
 
 			// Prepare to display
@@ -95,10 +98,12 @@ public class SaveAllSourcesView {
 		SwingUtil.invokeLater(() -> {
 			// Init
 			String fromFilePath = fromFile.getAbsolutePath();
-			saveAllSourcesFromLabel.setText("Saving '" + fromFilePath + "'");
+			saveAllSourcesFromLabel.setText(String.format("Saving '%s'",
+			                                              fromFilePath));
 
 			String toFilePath = toFile.getAbsolutePath();
-			saveAllSourcesToLabel.setText("to '" + toFilePath + "'...");
+			saveAllSourcesToLabel.setText(String.format("to '%s'...",
+			                                            toFilePath));
 
 			saveAllSourcesProgressBar.setValue(0);
 			saveAllSourcesProgressBar.setMaximum(10);
