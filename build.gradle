@@ -76,6 +76,7 @@ jar {
         attributes 'Main-Class': 'org.jd.gui.App',
                 'SplashScreen-Image': 'org/jd/gui/images/jd_icon_128.png',
                 'JD-GUI-Version': project.version,
+                'JD-GUI-Description': project.description,
                 'JD-Core-Version': project.jdCoreVersion
     }
     exclude 'META-INF/licenses/**', 'META-INF/maven/**', 'META-INF/INDEX.LIST'

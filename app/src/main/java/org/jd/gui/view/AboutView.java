@@ -26,11 +26,15 @@ public class AboutView {
 	protected JDialog aboutDialog;
 	protected JButton aboutOkButton;
 
-	private static final int    YEAR            = OffsetDateTime.now()
-	                                                            .getYear();
-	private static final String DEVELOPERS      = "Emmanuel Dupuy & Tomer Bar-Shlomo";
-	private static       String JD_GUI_VERSION  = "2022.3.26";
-	private static       String JD_CORE_VERSION = "1.1.3";
+	public static final  String DESCRIPTION         = "a standalone graphical utility that displays "
+	                                                  + "Java sources from CLASS files";
+	private static final int    YEAR                = OffsetDateTime.now()
+	                                                                .getYear();
+	private static final String QUILTFLOWER_VERSION = "1.7.0";
+	private static final String DEVELOPERS          = "(C) 2008-2022 Emmanuel Dupuy & Tomer Bar-Shlomo";
+	private static       String JD_GUI_VERSION      = "2022.3.26";
+	private static       String JD_CORE_VERSION     = "1.1.3";
+	private static       String JD_GUI_DESCRIPTION  = "JD-GUI " + DEVELOPERS + ", " + DESCRIPTION;
 
 	public AboutView(JFrame mainFrame) {
 		// Build GUI
@@ -82,7 +86,7 @@ public class AboutView {
 			subvbox.add(hbox);
 			JPanel subsubpanel = new JPanel();
 			hbox.add(subsubpanel);
-			subsubpanel.setLayout(new GridLayout(2,
+			subsubpanel.setLayout(new GridLayout(3,
 			                                     2));
 			subsubpanel.setOpaque(false);
 			subsubpanel.setBorder(BorderFactory.createEmptyBorder(5,
@@ -109,6 +113,11 @@ public class AboutView {
 						if (attribute != null) {
 							JD_CORE_VERSION = attribute;
 						}
+						attribute = attributes.getValue("JD-GUI-Description");
+
+						if (attribute != null) {
+							JD_GUI_DESCRIPTION = attribute;
+						}
 					}
 				}
 			} catch (IOException e) {
@@ -119,13 +128,17 @@ public class AboutView {
 			subsubpanel.add(new JLabel("version " + JD_GUI_VERSION));
 			subsubpanel.add(new JLabel("JD-Core"));
 			subsubpanel.add(new JLabel("version " + JD_CORE_VERSION));
+			subsubpanel.add(new JLabel("Quiltflower"));
+			subsubpanel.add(new JLabel("version " + QUILTFLOWER_VERSION));
 
 			hbox.add(Box.createHorizontalGlue());
-
-			hbox = Box.createHorizontalBox();
-			hbox.add(new JLabel("Copyright © 2008-" + YEAR + " " + DEVELOPERS));
-			hbox.add(Box.createHorizontalGlue());
-			subvbox.add(hbox);
+			String[] strings = JD_GUI_DESCRIPTION.split(", ");
+			for (String string : strings) {
+				hbox = Box.createHorizontalBox();
+				hbox.add(new JLabel(string));
+				hbox.add(Box.createHorizontalGlue());
+				subvbox.add(hbox);
+			}
 
 			vbox.add(Box.createVerticalStrut(10));
 
