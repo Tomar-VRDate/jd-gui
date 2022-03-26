@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022 Emmanuel Dupuy.
+ * Copyright (c) 2008-2022 Emmanuel Dupuy & Tomer Bar-Shlomo.
  * This project is distributed under the GPLv3 license.
  * This is a Copyleft license that gives the user the right to use,
  * copy and modify the code freely for non-commercial purposes.
@@ -17,6 +17,7 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.time.OffsetDateTime;
 import java.util.Enumeration;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -24,6 +25,12 @@ import java.util.jar.Manifest;
 public class AboutView {
 	protected JDialog aboutDialog;
 	protected JButton aboutOkButton;
+
+	private static final int    YEAR            = OffsetDateTime.now()
+	                                                            .getYear();
+	private static final String DEVELOPERS      = "Emmanuel Dupuy & Tomer Bar-Shlomo";
+	private static       String JD_GUI_VERSION  = "2022.3.26";
+	private static       String JD_CORE_VERSION = "1.1.3";
 
 	public AboutView(JFrame mainFrame) {
 		// Build GUI
@@ -83,9 +90,6 @@ public class AboutView {
 			                                                      5,
 			                                                      5));
 
-			String jdGuiVersion  = "2022.3.6";
-			String jdCoreVersion = "1.1.3";
-
 			try {
 				Enumeration<URL> enumeration = AboutView.class.getClassLoader()
 				                                              .getResources("META-INF/MANIFEST.MF");
@@ -97,13 +101,13 @@ public class AboutView {
 						String     attribute  = attributes.getValue("JD-GUI-Version");
 
 						if (attribute != null) {
-							jdGuiVersion = attribute;
+							JD_GUI_VERSION = attribute;
 						}
 
 						attribute = attributes.getValue("JD-Core-Version");
 
 						if (attribute != null) {
-							jdCoreVersion = attribute;
+							JD_CORE_VERSION = attribute;
 						}
 					}
 				}
@@ -112,14 +116,14 @@ public class AboutView {
 			}
 
 			subsubpanel.add(new JLabel("JD-GUI"));
-			subsubpanel.add(new JLabel("version " + jdGuiVersion));
+			subsubpanel.add(new JLabel("version " + JD_GUI_VERSION));
 			subsubpanel.add(new JLabel("JD-Core"));
-			subsubpanel.add(new JLabel("version " + jdCoreVersion));
+			subsubpanel.add(new JLabel("version " + JD_CORE_VERSION));
 
 			hbox.add(Box.createHorizontalGlue());
 
 			hbox = Box.createHorizontalBox();
-			hbox.add(new JLabel("Copyright © 2008-2022 Emmanuel Dupuy"));
+			hbox.add(new JLabel("Copyright © 2008-" + YEAR + " " + DEVELOPERS));
 			hbox.add(Box.createHorizontalGlue());
 			subvbox.add(hbox);
 

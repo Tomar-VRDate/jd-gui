@@ -15,7 +15,8 @@ apply plugin: 'edu.sc.seis.launch4j'
 apply plugin: 'nebula.ospackage'
 
 // Common configuration //
-rootProject.version = '2022.3.6'
+rootProject.version = '2022.3.26'
+rootProject.description = 'JD-GUI (C) 2008-2022 Emmanuel Dupuy & Tomer Bar-Shlomo, a standalone graphical utility that displays Java sources from CLASS files'
 rootProject.ext.set('jdCoreVersion', '1.1.3')
 targetCompatibility = '1.8'
 
@@ -115,7 +116,7 @@ launch4j {
     version = textVersion = project.version
     fileDescription = productName = 'JD-GUI'
     errTitle 'JD-GUI Windows Wrapper'
-    copyright 'JD-GUI (C) 2008-2022 Emmanuel Dupuy'
+    copyright = project.description
     icon projectDir.path + '/src/launch4j/resources/images/jd-gui.ico'
     jar projectDir.path + '/' + proguard.outJarFiles[0]
     bundledJrePath = '%JAVA_HOME%'
@@ -129,10 +130,10 @@ ospackage {
     license = file('LICENSE')
     maintainer 'Emmanuel Dupuy <emmanue1@users.noreply.github.com>'
     os LINUX
-    packageDescription 'JD-GUI, a standalone graphical utility that displays Java sources from CLASS files'
+    packageDescription = project.description
     packageGroup 'java'
     packageName project.name
-    release '2022.3.6'
+    release = project.version
     summary 'A Java Decompiler'
     url 'https://github.com/java-decompiler/jd-gui'
 
