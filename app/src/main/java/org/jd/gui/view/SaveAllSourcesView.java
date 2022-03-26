@@ -18,7 +18,8 @@ import java.io.File;
 
 public class SaveAllSourcesView {
 	protected JDialog      saveAllSourcesDialog;
-	protected JLabel       saveAllSourcesLabel;
+	protected JLabel       saveAllSourcesFromLabel;
+	protected JLabel       saveAllSourcesToLabel;
 	protected JProgressBar saveAllSourcesProgressBar;
 
 	public SaveAllSourcesView(JFrame mainFrame,
@@ -43,9 +44,13 @@ public class SaveAllSourcesView {
 			                                               15));
 			saveAllSourcesDialog.add(vbox);
 
-			// First label "Saving 'file' ..."
 			Box hbox = Box.createHorizontalBox();
-			hbox.add(saveAllSourcesLabel = new JLabel());
+			hbox.add(saveAllSourcesFromLabel = new JLabel());
+			hbox.add(Box.createHorizontalGlue());
+			vbox.add(hbox);
+
+			hbox = Box.createHorizontalBox();
+			hbox.add(saveAllSourcesToLabel = new JLabel());
 			hbox.add(Box.createHorizontalGlue());
 			vbox.add(hbox);
 
@@ -85,10 +90,16 @@ public class SaveAllSourcesView {
 		});
 	}
 
-	public void show(File file) {
+	public void show(File fromFile,
+	                 File toFile) {
 		SwingUtil.invokeLater(() -> {
 			// Init
-			saveAllSourcesLabel.setText("Saving '" + file.getAbsolutePath() + "'...");
+			String fromFilePath = fromFile.getAbsolutePath();
+			saveAllSourcesFromLabel.setText("Saving '" + fromFilePath + "'");
+
+			String toFilePath = toFile.getAbsolutePath();
+			saveAllSourcesToLabel.setText("to '" + toFilePath + "'...");
+
 			saveAllSourcesProgressBar.setValue(0);
 			saveAllSourcesProgressBar.setMaximum(10);
 			saveAllSourcesProgressBar.setIndeterminate(true);

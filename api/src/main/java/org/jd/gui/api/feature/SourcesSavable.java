@@ -8,11 +8,14 @@
 package org.jd.gui.api.feature;
 
 import org.jd.gui.api.API;
+import org.jd.gui.api.model.Container;
 
 import java.nio.file.Path;
 
 public interface SourcesSavable {
 	String getSourceFileName();
+
+	Container.Entry getEntry();
 
 	int getFileCount();
 

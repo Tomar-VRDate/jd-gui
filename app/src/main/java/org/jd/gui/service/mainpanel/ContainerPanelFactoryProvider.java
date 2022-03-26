@@ -28,7 +28,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -169,6 +168,11 @@ public class ContainerPanelFactoryProvider
 			tree.setModel(new DefaultTreeModel(root));
 		}
 
+		@Override
+		public Container.Entry getEntry() {
+			return entry;
+		}
+
 		// --- ContentIndexable --- //
 		@Override
 		public Indexes index(API api) {
@@ -220,11 +224,6 @@ public class ContainerPanelFactoryProvider
 		                 Listener listener,
 		                 Path path) {
 			try {
-				Path parentPath = path.getParent();
-
-				if ((parentPath != null) && !Files.exists(parentPath)) {
-					Files.createDirectories(parentPath);
-				}
 
 				URI uri = path.toUri();
 				URI archiveUri = new URI("jar:" + uri.getScheme(),

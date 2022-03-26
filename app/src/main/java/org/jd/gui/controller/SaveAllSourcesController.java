@@ -9,6 +9,7 @@ package org.jd.gui.controller;
 
 import org.jd.gui.api.API;
 import org.jd.gui.api.feature.SourcesSavable;
+import org.jd.gui.api.model.Container;
 import org.jd.gui.util.exception.ExceptionUtil;
 import org.jd.gui.view.SaveAllSourcesView;
 
@@ -38,9 +39,13 @@ public class SaveAllSourcesController
 
 	public void show(ScheduledExecutorService executor,
 	                 SourcesSavable savable,
-	                 File file) {
+	                 File toFile) {
 		// Show
-		this.saveAllSourcesView.show(file);
+		Container.Entry entry    = savable.getEntry();
+		File            fromFile = new File(entry.getUri());
+		this.saveAllSourcesView.show(fromFile,
+		                             toFile);
+
 		// Execute background task
 		executor.execute(() -> {
 			int fileCount = savable.getFileCount();
@@ -60,10 +65,16 @@ public class SaveAllSourcesController
 			mask--;
 
 			try {
-				Path path = Paths.get(file.toURI());
+				Path path = Paths.get(toFile.toURI());
 				Files.deleteIfExists(path);
 
 				try {
+					Path parentPath = path.getParent();
+
+					if ((parentPath != null) && !Files.exists(parentPath)) {
+						Files.createDirectories(parentPath);
+					}
+
 					savable.save(api,
 					             this,
 					             this,
