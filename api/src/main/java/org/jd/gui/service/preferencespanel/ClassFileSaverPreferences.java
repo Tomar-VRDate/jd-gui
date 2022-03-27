@@ -1,11 +1,8 @@
 package org.jd.gui.service.preferencespanel;
 
-import org.jd.gui.spi.GenericPreferencesPanel;
-import org.jd.gui.util.swing.Preference;
-
 import java.util.LinkedHashMap;
 
-enum ClassFileSaverPreferences
+public enum ClassFileSaverPreferences
 				implements Preference {
 	writeLineNumbers("Write original line numbers",
 	                 Preference.FALSE,
@@ -15,11 +12,11 @@ enum ClassFileSaverPreferences
 	              Preference.FALSE,
 	              Preference.FALSE,
 	              Preference.TRUE);
-	private static final LinkedHashMap<String, ClassFileSaverPreferences> nameClassClassFileSaverPreferencesMap
-					= GenericPreferencesPanel.toLinkedHashMapByName(ClassFileSaverPreferences.values());
+	private static final LinkedHashMap<String, ClassFileSaverPreferences> namePreferencesMap
+					= GenericPreferencesPanel.toPreferenceByNameMap(ClassFileSaverPreferences.values());
 
-	private static final LinkedHashMap<String, ClassFileSaverPreferences> descriptionCClassFileSaverPreferencesMap
-					= GenericPreferencesPanel.toLinkedHashMapByDescription(ClassFileSaverPreferences.values());
+	private static final LinkedHashMap<String, ClassFileSaverPreferences> descriptionPreferencesMap
+					= GenericPreferencesPanel.toPreferenceByDescriptionMap(ClassFileSaverPreferences.values());
 
 	private final String   description;
 	private final String[] possibleValues;
@@ -42,11 +39,11 @@ enum ClassFileSaverPreferences
 	}
 
 	public static ClassFileSaverPreferences getByName(String name) {
-		return nameClassClassFileSaverPreferencesMap.get(name);
+		return namePreferencesMap.get(name);
 	}
 
 	public static ClassFileSaverPreferences getByDescription(String description) {
-		return descriptionCClassFileSaverPreferencesMap.get(description);
+		return descriptionPreferencesMap.get(description);
 	}
 
 	@Override

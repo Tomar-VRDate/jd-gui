@@ -12,7 +12,6 @@ import org.jd.gui.spi.PreferencesPanel;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 
 public class PreferencesPanelService {
 	protected static final PreferencesPanelService      PREFERENCES_PANEL_SERVICE = new PreferencesPanelService();
@@ -21,14 +20,8 @@ public class PreferencesPanelService {
 	protected PreferencesPanelService() {
 		Collection<PreferencesPanel> list = ExtensionService.getInstance()
 		                                                    .load(PreferencesPanel.class);
-		Iterator<PreferencesPanel> iterator = list.iterator();
 
-		while (iterator.hasNext()) {
-			if (!iterator.next()
-			             .isActivated()) {
-				iterator.remove();
-			}
-		}
+		list.removeIf(preferencesPanel -> !preferencesPanel.isActivated());
 
 		HashMap<String, PreferencesPanel> map = new HashMap<>();
 

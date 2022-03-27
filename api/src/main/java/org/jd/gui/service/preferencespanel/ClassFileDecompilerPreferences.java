@@ -1,11 +1,8 @@
 package org.jd.gui.service.preferencespanel;
 
-import org.jd.gui.spi.GenericPreferencesPanel;
-import org.jd.gui.util.swing.Preference;
-
 import java.util.LinkedHashMap;
 
-enum ClassFileDecompilerPreference
+public enum ClassFileDecompilerPreferences
 				implements Preference {
 	escapeUnicodeCharacters("Escape unicode characters",
 	                        Preference.FALSE,
@@ -14,12 +11,16 @@ enum ClassFileDecompilerPreference
 	realignLineNumbers("Realign line numbers",
 	                   Preference.FALSE,
 	                   Preference.FALSE,
-	                   Preference.TRUE);
-	private static final LinkedHashMap<String, ClassFileDecompilerPreference> nameClassFileDecompilerPreferencesMap
-					= GenericPreferencesPanel.toLinkedHashMapByName(ClassFileDecompilerPreference.values());
+	                   Preference.TRUE),
+	decompileWithQuiltflower("Decompile with Quiltflower",
+	                         Preference.TRUE,
+	                         Preference.FALSE,
+	                         Preference.TRUE);
+	private static final LinkedHashMap<String, ClassFileDecompilerPreferences> namePreferencesMap
+					= GenericPreferencesPanel.toPreferenceByNameMap(ClassFileDecompilerPreferences.values());
 
-	private static final LinkedHashMap<String, ClassFileDecompilerPreference> descriptionClassFileDecompilerPreferencesMap
-					= GenericPreferencesPanel.toLinkedHashMapByDescription(ClassFileDecompilerPreference.values());
+	private static final LinkedHashMap<String, ClassFileDecompilerPreferences> descriptionPreferencesMap
+					= GenericPreferencesPanel.toPreferenceByDescriptionMap(ClassFileDecompilerPreferences.values());
 
 	private final String   description;
 	private final String[] possibleValues;
@@ -27,9 +28,9 @@ enum ClassFileDecompilerPreference
 	private final String   defaultValue;
 	private       String   selectedValue;
 
-	ClassFileDecompilerPreference(String description,
-	                              String defaultValue,
-	                              String... possibleValues) {
+	ClassFileDecompilerPreferences(String description,
+	                               String defaultValue,
+	                               String... possibleValues) {
 		this.description = description;
 		this.possibleValues = possibleValues;
 		this.defaultValue = defaultValue;
@@ -41,12 +42,12 @@ enum ClassFileDecompilerPreference
 		                     : defaultValue;
 	}
 
-	public static ClassFileDecompilerPreference getByName(String name) {
-		return nameClassFileDecompilerPreferencesMap.get(name);
+	public static ClassFileDecompilerPreferences getByName(String name) {
+		return namePreferencesMap.get(name);
 	}
 
-	public static ClassFileDecompilerPreference getByDescription(String description) {
-		return descriptionClassFileDecompilerPreferencesMap.get(description);
+	public static ClassFileDecompilerPreferences getByDescription(String description) {
+		return descriptionPreferencesMap.get(description);
 	}
 
 	@Override

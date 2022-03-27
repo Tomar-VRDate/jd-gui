@@ -291,7 +291,7 @@ public class MainController
 					File selectedFile = chooser.getSelectedFile();
 
 					configuration.setRecentSaveDirectory(chooser.getCurrentDirectory());
-
+					Map<String, String> preferences = getPreferences();
 					if (selectedFile.exists()) {
 						String title = "Are you sure?";
 						String message = "The file '"
@@ -304,12 +304,14 @@ public class MainController
 						                                  JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
 							saveAllSourcesController.show(executor,
 							                              sourcesSavable,
-							                              selectedFile);
+							                              selectedFile,
+							                              preferences);
 						}
 					} else {
 						saveAllSourcesController.show(executor,
 						                              sourcesSavable,
-						                              selectedFile);
+						                              selectedFile,
+						                              preferences);
 					}
 				}
 			}

@@ -10,6 +10,8 @@ package org.jd.gui.controller;
 import org.jd.gui.api.API;
 import org.jd.gui.api.feature.SourcesSavable;
 import org.jd.gui.api.model.Container;
+import org.jd.gui.service.preferencespanel.ClassFileDecompilerPreferences;
+import org.jd.gui.service.preferencespanel.Preference;
 import org.jd.gui.util.exception.ExceptionUtil;
 import org.jd.gui.view.SaveAllSourcesView;
 
@@ -18,6 +20,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class SaveAllSourcesController
@@ -39,12 +42,15 @@ public class SaveAllSourcesController
 
 	public void show(ScheduledExecutorService executor,
 	                 SourcesSavable savable,
-	                 File toFile) {
+	                 File toFile,
+	                 Map<String, String> preferences) {
 		// Show
 		Container.Entry entry    = savable.getEntry();
 		File            fromFile = new File(entry.getUri());
 		this.saveAllSourcesView.show(fromFile,
 		                             toFile);
+		String decompileWithQuiltflower = Preference.get(preferences,
+		                                                 ClassFileDecompilerPreferences.decompileWithQuiltflower);
 
 		// Execute background task
 		executor.execute(() -> {
@@ -75,10 +81,14 @@ public class SaveAllSourcesController
 						Files.createDirectories(parentPath);
 					}
 
-					savable.save(api,
-					             this,
-					             this,
-					             path);
+					if (decompileWithQuiltflower.equals(ClassFileDecompilerPreferences.decompileWithQuiltflower.getDefaultValue())) {
+
+					} else {
+						savable.save(api,
+						             this,
+						             this,
+						             path);
+					}
 				} catch (Exception e) {
 					assert ExceptionUtil.printStackTrace(e);
 					saveAllSourcesView.showActionFailedDialog();
@@ -91,7 +101,6 @@ public class SaveAllSourcesController
 			} catch (Throwable t) {
 				assert ExceptionUtil.printStackTrace(t);
 			}
-
 			saveAllSourcesView.hide();
 		});
 	}

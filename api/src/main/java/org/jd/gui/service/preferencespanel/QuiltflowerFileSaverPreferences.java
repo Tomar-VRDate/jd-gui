@@ -1,11 +1,8 @@
-package org.jetbrains.java.decompiler.main.extern;
-
-import org.jd.gui.spi.GenericPreferencesPanel;
-import org.jd.gui.util.swing.Preference;
+package org.jd.gui.service.preferencespanel;
 
 import java.util.LinkedHashMap;
 
-public enum FernflowerPreference
+public enum QuiltflowerFileSaverPreferences
 				implements Preference {
 	rbr("Hide bridge methods",
 	    Preference.TRUE,
@@ -171,13 +168,12 @@ public enum FernflowerPreference
 	dee("Dump exceptions on errors",
 	    Preference.TRUE,
 	    Preference.FALSE,
-	    Preference.TRUE),
-	;
-	private static final LinkedHashMap<String, FernflowerPreference> nameFernflowerPreferencesMap
-					= GenericPreferencesPanel.toLinkedHashMapByName(FernflowerPreference.values());
+	    Preference.TRUE);
+	private static final LinkedHashMap<String, QuiltflowerFileSaverPreferences> namePreferencesMap
+					= GenericPreferencesPanel.toPreferenceByNameMap(QuiltflowerFileSaverPreferences.values());
 
-	private static final LinkedHashMap<String, FernflowerPreference> descriptionFernflowerPreferencesMap
-					= GenericPreferencesPanel.toLinkedHashMapByDescription(FernflowerPreference.values());
+	private static final LinkedHashMap<String, QuiltflowerFileSaverPreferences> descriptionPreferencesMap
+					= GenericPreferencesPanel.toPreferenceByDescriptionMap(QuiltflowerFileSaverPreferences.values());
 
 	private final String   description;
 	private final String[] possibleValues;
@@ -185,9 +181,9 @@ public enum FernflowerPreference
 	private final String   defaultValue;
 	private       String   selectedValue;
 
-	FernflowerPreference(String description,
-	                     String defaultValue,
-	                     String... possibleValues) {
+	QuiltflowerFileSaverPreferences(String description,
+	                                String defaultValue,
+	                                String... possibleValues) {
 		this.description = description;
 		this.possibleValues = possibleValues;
 		this.defaultValue = defaultValue;
@@ -199,12 +195,12 @@ public enum FernflowerPreference
 		                     : defaultValue;
 	}
 
-	public static FernflowerPreference getByName(String name) {
-		return nameFernflowerPreferencesMap.get(name);
+	public static QuiltflowerFileSaverPreferences getByName(String name) {
+		return namePreferencesMap.get(name);
 	}
 
-	public static FernflowerPreference getByDescription(String description) {
-		return descriptionFernflowerPreferencesMap.get(description);
+	public static QuiltflowerFileSaverPreferences getByDescription(String description) {
+		return descriptionPreferencesMap.get(description);
 	}
 
 	@Override

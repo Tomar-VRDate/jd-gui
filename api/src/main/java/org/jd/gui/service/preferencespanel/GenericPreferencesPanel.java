@@ -5,10 +5,9 @@
  * copy and modify the code freely for non-commercial purposes.
  */
 
-package org.jd.gui.spi;
+package org.jd.gui.service.preferencespanel;
 
 import org.jd.gui.util.map.MapToolbox;
-import org.jd.gui.util.swing.Preference;
 import org.jd.gui.util.swing.SwingUtil;
 
 import javax.swing.*;
@@ -19,14 +18,14 @@ import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.jd.gui.spi.GenericPreferencesPanel.getSelectedPreferenceValue;
+import static org.jd.gui.service.preferencespanel.GenericPreferencesPanel.getSelectedPreferenceValue;
 
 @SuppressWarnings("UnnecessaryLocalVariable")
 public interface GenericPreferencesPanel
 				extends ActionListener {
 	boolean NAME_AND_DEFAULT = false;
 
-	static <Source extends Preference> LinkedHashMap<String, Source> toLinkedHashMapByName(Source[] sources) {
+	static <Source extends Preference> LinkedHashMap<String, Source> toPreferenceByNameMap(Source[] sources) {
 		LinkedHashMap<String, Source> linkedHashMapByName = MapToolbox.toLinkedHashMap(Preference::name,
 		                                                                               Preference::name,
 		                                                                               source -> source,
@@ -34,7 +33,7 @@ public interface GenericPreferencesPanel
 		return linkedHashMapByName;
 	}
 
-	static <Source extends Preference> LinkedHashMap<String, Source> toLinkedHashMapByDescription(Source[] sources) {
+	static <Source extends Preference> LinkedHashMap<String, Source> toPreferenceByDescriptionMap(Source[] sources) {
 		LinkedHashMap<String, Source> linkedHashMapByDescription = MapToolbox.toLinkedHashMap(Preference::getDescription,
 		                                                                                      Preference::getDescription,
 		                                                                                      source -> source,
@@ -42,7 +41,7 @@ public interface GenericPreferencesPanel
 		return linkedHashMapByDescription;
 	}
 
-	static <Source extends Preference> LinkedHashMap<String, Source> toLinkedHashMapByName(Collection<Source> sources) {
+	static <Source extends Preference> LinkedHashMap<String, Source> toPreferenceByNameMap(Collection<Source> sources) {
 		LinkedHashMap<String, Source> linkedHashMapByName = MapToolbox.toLinkedHashMap(Preference::name,
 		                                                                               Preference::name,
 		                                                                               source -> source,
@@ -50,7 +49,7 @@ public interface GenericPreferencesPanel
 		return linkedHashMapByName;
 	}
 
-	static <Source extends Preference> LinkedHashMap<String, Source> toLinkedHashMapByDescription(Collection<Source> sources) {
+	static <Source extends Preference> LinkedHashMap<String, Source> toPreferenceByDescriptionMap(Collection<Source> sources) {
 		LinkedHashMap<String, Source> linkedHashMapByDescription = MapToolbox.toLinkedHashMap(Preference::getDescription,
 		                                                                                      Preference::getDescription,
 		                                                                                      source -> source,
@@ -58,8 +57,8 @@ public interface GenericPreferencesPanel
 		return linkedHashMapByDescription;
 	}
 
-	static <Source extends Preference> LinkedHashMap<Source, java.util.List<AbstractButton>> toAbstractButtonsByPreferenceDescriptionMap(Source[] sources,
-	                                                                                                                                     GenericPreferencesPanel preferencesPanel) {
+	static <Source extends Preference> LinkedHashMap<Source, java.util.List<AbstractButton>> toAbstractButtonsByPreferenceMap(Source[] sources,
+	                                                                                                                          GenericPreferencesPanel preferencesPanel) {
 		LinkedHashMap<Source, List<AbstractButton>> abstractButtonsByPreferenceDescriptionMap = Arrays.stream(sources)
 		                                                                                              .sorted(Comparator.comparing(Preference::getDescription))
 		                                                                                              .collect(Collectors.toMap(source -> source,
@@ -71,8 +70,8 @@ public interface GenericPreferencesPanel
 
 	}
 
-	static <Source extends Preference> LinkedHashMap<Source, List<AbstractButton>> toAbstractButtonsByPreferenceDescriptionMap(Collection<Source> sources,
-	                                                                                                                           GenericPreferencesPanel preferencesPanel) {
+	static <Source extends Preference> LinkedHashMap<Source, List<AbstractButton>> toAbstractButtonsByPreferenceMap(Collection<Source> sources,
+	                                                                                                                GenericPreferencesPanel preferencesPanel) {
 		LinkedHashMap<Source, List<AbstractButton>> abstractButtonsByPreferenceDescriptionMap = sources.stream()
 		                                                                                               .sorted(Comparator.comparing(Preference::getDescription))
 		                                                                                               .collect(Collectors.toMap(source -> source,
@@ -229,8 +228,7 @@ public interface GenericPreferencesPanel
 		Preference preference = (Preference) action.getValue(SwingUtil.PREFERENCE);
 		String preferenceValue = action.getValue(SwingUtil.PREFERENCE_VALUE)
 		                               .toString();
-		String preferenceName = preference.getClass()
-		                                  .getSimpleName() + "." + preference.name();
+		String preferenceKey   = preference.getKey();
 		String deselectedValue = preference.getDeselectedValue();
 		String actionName = action.getValue(Action.NAME)
 		                          .toString();
@@ -240,13 +238,13 @@ public interface GenericPreferencesPanel
 		                       : deselectedValue;
 		System.out.printf("%s '%s'=%s %s %s%n",
 		                  "Saving preference",
-		                  preferenceName,
+		                  preferenceKey,
 		                  selectedValue,
 		                  isSelected
 		                  ? '+'
 		                  : '-',
 		                  actionName);
-		preferences.put(preferenceName,
+		preferences.put(preferenceKey,
 		                selectedValue);
 	}
 
@@ -267,17 +265,16 @@ public interface GenericPreferencesPanel
 
 	static void load(Map<String, String> preferences,
 	                 AbstractButton abstractButton) {
-		Action     action     = abstractButton.getAction();
-		Preference preference = (Preference) action.getValue(SwingUtil.PREFERENCE);
-		String preferenceName = preference.getClass()
-		                                  .getSimpleName() + "." + preference.name();
+		Action     action        = abstractButton.getAction();
+		Preference preference    = (Preference) action.getValue(SwingUtil.PREFERENCE);
+		String     preferenceKey = preference.getKey();
 		String actionName = action.getValue(Action.NAME)
 		                          .toString();
 		String defaultValue = preference.getDefaultValue();
 		String preferenceValue = action.getValue(SwingUtil.PREFERENCE_VALUE)
 		                               .toString();
 		boolean isSelectedByDefault          = defaultValue.equals(preferenceValue);
-		String  preferencesValue             = preferences.get(preferenceName);
+		String  preferencesValue             = preferences.get(preferenceKey);
 		boolean isSelectedByPreferencesValue = preferencesValue != null;
 		String selectedValue = isSelectedByDefault && isSelectedByPreferencesValue
 		                       ? preferenceValue
@@ -288,7 +285,7 @@ public interface GenericPreferencesPanel
 		boolean isSelected = selectedValue.equals(preferenceValue);
 		System.out.printf("%s '%s'=%s %s %s %s%n",
 		                  "Loading preference",
-		                  preferenceName,
+		                  preferenceKey,
 		                  selectedValue,
 		                  preferencesValue,
 		                  isSelected
@@ -299,9 +296,9 @@ public interface GenericPreferencesPanel
 	}
 
 	static String getSelectedPreferenceValue(AbstractButton abstractButton) {
-		Action     action         = abstractButton.getAction();
-		Preference preference     = (Preference) action.getValue(SwingUtil.PREFERENCE);
-		String     preferenceName = preference.name();
+		Action     action        = abstractButton.getAction();
+		Preference preference    = (Preference) action.getValue(SwingUtil.PREFERENCE);
+		String     preferenceKey = preference.getKey();
 		String actionName = action.getValue(Action.NAME)
 		                          .toString();
 		String defaultValue = preference.getDefaultValue();
@@ -314,7 +311,7 @@ public interface GenericPreferencesPanel
 		preference.setSelectedValue(selectedValue);
 		System.out.printf("%s '%s'=%s %s %s%n",
 		                  "Selected preference",
-		                  preferenceName,
+		                  preferenceKey,
 		                  selectedValue,
 		                  isSelected
 		                  ? '+'
