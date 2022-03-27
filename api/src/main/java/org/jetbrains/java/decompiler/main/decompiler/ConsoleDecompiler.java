@@ -61,9 +61,10 @@ public class ConsoleDecompiler
 		                        logger);
 	}
 
-	@SuppressWarnings("UseOfSystemOutOrSystemErr")
+	@SuppressWarnings({"UseOfSystemOutOrSystemErr",
+	                   "ToArrayCallWithZeroLengthArrayArgument"})
 	public static void main(String[] args) {
-		List<String> params = new ArrayList<String>();
+		List<String> params = new ArrayList<>();
 		for (int x = 0;
 		     x < args.length;
 		     x++) {
