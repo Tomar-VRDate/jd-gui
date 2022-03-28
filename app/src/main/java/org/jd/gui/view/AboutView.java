@@ -32,7 +32,7 @@ public class AboutView {
 	                                                                .getYear();
 	private static final String QUILTFLOWER_VERSION = "1.7.0";
 	private static final String DEVELOPERS          = "(C) 2008-2022 Emmanuel Dupuy & Tomer Bar-Shlomo";
-	private static       String JD_GUI_VERSION      = "2022.3.26";
+	private static       String JD_GUI_VERSION      = "2022.3.28";
 	private static       String JD_CORE_VERSION     = "1.1.3";
 	private static       String JD_GUI_DESCRIPTION  = "JD-GUI " + DEVELOPERS + ", " + DESCRIPTION;
 

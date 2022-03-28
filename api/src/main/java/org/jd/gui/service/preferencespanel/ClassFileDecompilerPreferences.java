@@ -12,7 +12,7 @@ public enum ClassFileDecompilerPreferences
 	                   Preference.FALSE,
 	                   Preference.FALSE,
 	                   Preference.TRUE),
-	decompileWithQuiltflower("Decompile with Quiltflower",
+	decompileWithQuiltflower("Decompile jar with Quiltflower on Save All Sources (Ctrl+Alt+S).",
 	                         Preference.TRUE,
 	                         Preference.FALSE,
 	                         Preference.TRUE);

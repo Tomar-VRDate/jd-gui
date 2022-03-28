@@ -10,8 +10,13 @@ package org.jd.gui.view.component;
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.jd.core.v1.ClassFileToJavaSourceDecompiler;
+import org.jd.core.v1.api.loader.LoaderException;
+import org.jd.core.v1.api.printer.Printer;
 import org.jd.gui.api.API;
 import org.jd.gui.api.model.Container;
+import org.jd.gui.service.preferencespanel.ClassFileDecompilerPreferences;
+import org.jd.gui.service.preferencespanel.Preference;
+import org.jd.gui.service.preferencespanel.QuiltflowerFileSaverPreferences;
 import org.jd.gui.util.decompiler.*;
 import org.jd.gui.util.exception.ExceptionUtil;
 import org.jd.gui.util.io.NewlineOutputStream;
@@ -20,10 +25,13 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
 import java.awt.*;
 import java.io.*;
+import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("UnnecessaryLocalVariable")
 public class ClassFilePage
 				extends TypePage {
 	protected static final String ESCAPE_UNICODE_CHARACTERS = "ClassFileDecompilerPreferences.escapeUnicodeCharacters";
@@ -31,8 +39,10 @@ public class ClassFilePage
 	protected static final String WRITE_LINE_NUMBERS        = "ClassFileSaverPreferences.writeLineNumbers";
 	protected static final String WRITE_METADATA            = "ClassFileSaverPreferences.writeMetadata";
 	protected static final String JD_CORE_VERSION           = "JdGuiPreferences.jdCoreVersion";
+	protected static final String QUILTFLOWER_VERSION       = "JdGuiPreferences.quiltflowerVersion";
 
-	protected static final ClassFileToJavaSourceDecompiler DECOMPILER = new ClassFileToJavaSourceDecompiler();
+	protected static final ClassFileToJavaSourceDecompiler JD_CORE_CLASS_FILE_TO_JAVA_SOURCE_DECOMPILER
+					= new ClassFileToJavaSourceDecompiler();
 
 	static {
 		// Early class loading
@@ -40,9 +50,9 @@ public class ClassFilePage
 			String internalTypeName = ClassFilePage.class.getName()
 			                                             .replace('.',
 			                                                      '/');
-			DECOMPILER.decompile(new ClassPathLoader(),
-			                     new NopPrinter(),
-			                     internalTypeName);
+			JD_CORE_CLASS_FILE_TO_JAVA_SOURCE_DECOMPILER.decompile(new ClassPathLoader(),
+			                                                       new NopPrinter(),
+			                                                       internalTypeName);
 		} catch (Throwable t) {
 			assert ExceptionUtil.printStackTrace(t);
 		}
@@ -61,63 +71,42 @@ public class ClassFilePage
 		decompile(preferences);
 	}
 
-	protected static boolean getPreferenceValue(Map<String, String> preferences,
-	                                            String key,
-	                                            boolean defaultValue) {
-		String v = preferences.get(key);
-		return (v == null)
-		       ? defaultValue
-		       : Boolean.valueOf(v);
-	}
+	@SuppressWarnings("ResultOfMethodCallIgnored")
+	public static String[] toQuiltflowerClassArgs(Container.Entry entry,
+	                                              ContainerLoader containerLoader,
+	                                              String entryInternalName,
+	                                              Map<String, String> preferences)
+					throws
+					IOException,
+					LoaderException {
+		URI  entryUri      = entry.getUri();
+		File fromEntryFile = new File(entryUri);
 
-	public void decompile(Map<String, String> preferences) {
-		try {
-			// Clear ...
-			clearHyperlinks();
-			clearLineNumbers();
-			declarations.clear();
-			typeDeclarations.clear();
-			strings.clear();
+		File fromJarFile = getFromJarFile(fromEntryFile);
 
-			// Init preferences
-			boolean realignmentLineNumbers = getPreferenceValue(preferences,
-			                                                    REALIGN_LINE_NUMBERS,
-			                                                    false);
-			boolean unicodeEscape = getPreferenceValue(preferences,
-			                                           ESCAPE_UNICODE_CHARACTERS,
-			                                           false);
+		File fromTempClassFile = getFromTempClassFile(fromEntryFile);
+		saveClassFile(containerLoader,
+		              entryInternalName,
+		              fromTempClassFile);
+		File fromClassFile = getFromClassFile(fromEntryFile);
+		fromTempClassFile.renameTo(fromClassFile);
 
-			Map<String, Object> configuration = new HashMap<>();
-			configuration.put("realignLineNumbers",
-			                  realignmentLineNumbers);
-
-			setShowMisalignment(realignmentLineNumbers);
-
-			// Init loader
-			ContainerLoader loader = new ContainerLoader(entry);
-
-			// Init printer
-			ClassFilePrinter printer = new ClassFilePrinter();
-			printer.setRealignmentLineNumber(realignmentLineNumbers);
-			printer.setUnicodeEscape(unicodeEscape);
-
-			// Format internal name
-			String entryPath = entry.getPath();
-			assert entryPath.endsWith(".class");
-			String entryInternalName = entryPath.substring(0,
-			                                               entryPath.length() - 6); // 6 = ".class".length()
-
-			// Decompile class file
-			DECOMPILER.decompile(loader,
-			                     printer,
-			                     entryInternalName,
-			                     configuration);
-		} catch (Throwable t) {
-			assert ExceptionUtil.printStackTrace(t);
-			setText("// INTERNAL ERROR //");
-		}
-
-		maximumLineNumber = getMaximumSourceLineNumber();
+		File toJavaFile = getToJavaFile(fromEntryFile);
+		String[] quiltflowerArgs = QuiltflowerFileSaverPreferences.toQuiltflowerClassArgs(fromJarFile,
+		                                                                                  fromClassFile,
+		                                                                                  toJavaFile,
+		                                                                                  preferences);
+		System.out.printf("Decompiling class file with Quiltflower %s%n"
+		                  + "from %s%n"
+		                  + "to %s%n"
+		                  + "preferences=%s%n"
+		                  + "quiltflowerArgs=%s%n",
+		                  preferences.get(QUILTFLOWER_VERSION),
+		                  fromClassFile,
+		                  toJavaFile,
+		                  preferences,
+		                  Arrays.toString(quiltflowerArgs));
+		return quiltflowerArgs;
 	}
 
 	@Override
@@ -132,53 +121,137 @@ public class ClassFilePage
 		                      index) + ".java";
 	}
 
+	public static File getFromTempClassFile(File fromEntryFile)
+					throws
+					IOException {
+		File fromFile = getFromClassFile(fromEntryFile);
+		File fromTempFile = File.createTempFile(fromFile.getName(),
+		                                        ".class");
+		fromTempFile.deleteOnExit();
+		return fromTempFile;
+	}
+
+	private static File getFromJarFile(File fromEntryFile) {
+		String fromJarAbsolutePath = fromEntryFile.getAbsolutePath()
+		                                          .split("!")[0];
+		File fromJarFile = new File(fromJarAbsolutePath);
+		return fromJarFile;
+	}
+
+	private static File getFromClassFile(File fromEntryFile) {
+		String fromClassAbsolutePath = fromEntryFile.getAbsolutePath()
+		                                            .replace(".jar!",
+		                                                     "/classes");
+		File fromFile = new File(fromClassAbsolutePath);
+		return fromFile;
+	}
+
+	private static void saveClassFile(ContainerLoader containerLoader,
+	                                  String entryInternalName,
+	                                  File fromFile)
+					throws
+					LoaderException,
+					IOException {
+		byte[] entryBytes = containerLoader.load(entryInternalName);
+		try (FileOutputStream fileOutputStream = new FileOutputStream(fromFile)) {
+			fileOutputStream.write(entryBytes);
+		}
+	}
+
+	public static File getToJavaFile(File fromEntryFile)
+					throws
+					IOException {
+		String toJavaAbsolutePath = fromEntryFile.getAbsolutePath()
+		                                         .replace(".jar!",
+		                                                  "/src/main/java")
+		                                         .replace(".class",
+		                                                  ".java");
+		File toFile = new File(toJavaAbsolutePath);
+		//		File toTempFile = File.createTempFile(toFile.getName(),
+		//		                                      ".tmp");
+		//		toTempFile.deleteOnExit();
+		return toFile;
+	}
+
+	public void decompile(Map<String, String> preferences) {
+		try {
+			// Clear ...
+			clearHyperlinks();
+			clearLineNumbers();
+			declarations.clear();
+			typeDeclarations.clear();
+			strings.clear();
+
+			// Init preferences
+			boolean realignmentLineNumbers = Preference.getBoolean(preferences,
+			                                                       REALIGN_LINE_NUMBERS,
+			                                                       false);
+			boolean unicodeEscape = Preference.getBoolean(preferences,
+			                                              ESCAPE_UNICODE_CHARACTERS,
+			                                              false);
+
+			Map<String, Object> configuration = new HashMap<>();
+			configuration.put("realignLineNumbers",
+			                  realignmentLineNumbers);
+
+			setShowMisalignment(realignmentLineNumbers);
+
+			// Init classFilePrinter
+			ClassFilePrinter classFilePrinter = new ClassFilePrinter();
+			classFilePrinter.setRealignmentLineNumber(realignmentLineNumbers);
+			classFilePrinter.setUnicodeEscape(unicodeEscape);
+
+			decompileClassFile(preferences,
+			                   configuration,
+			                   classFilePrinter);
+		} catch (Throwable t) {
+			assert ExceptionUtil.printStackTrace(t);
+			String text = String.format("// INTERNAL ERROR //%n%s",
+			                            t);
+			setText(text);
+		}
+
+		maximumLineNumber = getMaximumSourceLineNumber();
+	}
+
 	@Override
 	public void save(API api,
 	                 OutputStream os) {
 		try {
 			// Init preferences
 			Map<String, String> preferences = api.getPreferences();
-			boolean realignmentLineNumbers = getPreferenceValue(preferences,
-			                                                    REALIGN_LINE_NUMBERS,
-			                                                    false);
-			boolean unicodeEscape = getPreferenceValue(preferences,
-			                                           ESCAPE_UNICODE_CHARACTERS,
-			                                           false);
-			boolean showLineNumbers = getPreferenceValue(preferences,
-			                                             WRITE_LINE_NUMBERS,
-			                                             true);
+			boolean realignmentLineNumbers = Preference.getBoolean(preferences,
+			                                                       REALIGN_LINE_NUMBERS,
+			                                                       false);
 
+			boolean unicodeEscape = Preference.getBoolean(preferences,
+			                                              ESCAPE_UNICODE_CHARACTERS,
+			                                              false);
+
+			boolean showLineNumbers = Preference.getBoolean(preferences,
+			                                                WRITE_LINE_NUMBERS,
+			                                                true);
+
+			boolean writeMetadata = Preference.getBoolean(preferences,
+			                                              ClassFilePage.WRITE_METADATA,
+			                                              true);
 			Map<String, Object> configuration = new HashMap<>();
 			configuration.put("realignLineNumbers",
 			                  realignmentLineNumbers);
 
-			// Init loader
-			ContainerLoader loader = new ContainerLoader(entry);
+			// Init lineNumberStringBuilderPrinter
+			LineNumberStringBuilderPrinter lineNumberStringBuilderPrinter = new LineNumberStringBuilderPrinter();
+			lineNumberStringBuilderPrinter.setRealignmentLineNumber(realignmentLineNumbers);
+			lineNumberStringBuilderPrinter.setUnicodeEscape(unicodeEscape);
+			lineNumberStringBuilderPrinter.setShowLineNumbers(showLineNumbers);
+			StringBuilder stringBuffer = lineNumberStringBuilderPrinter.getStringBuffer();
 
-			// Init printer
-			LineNumberStringBuilderPrinter printer = new LineNumberStringBuilderPrinter();
-			printer.setRealignmentLineNumber(realignmentLineNumbers);
-			printer.setUnicodeEscape(unicodeEscape);
-			printer.setShowLineNumbers(showLineNumbers);
-
-			// Format internal name
-			String entryPath = entry.getPath();
-			assert entryPath.endsWith(".class");
-			String entryInternalName = entryPath.substring(0,
-			                                               entryPath.length() - 6); // 6 = ".class".length()
-
-			// Decompile class file
-			DECOMPILER.decompile(loader,
-			                     printer,
-			                     entryInternalName,
-			                     configuration);
-
-			StringBuilder stringBuffer = printer.getStringBuffer();
+			decompileClassFile(preferences,
+			                   configuration,
+			                   lineNumberStringBuilderPrinter);
 
 			// Metadata
-			if (getPreferenceValue(preferences,
-			                       WRITE_METADATA,
-			                       true)) {
+			if (writeMetadata) {
 				// Add location
 				String location = new File(entry.getUri()).getPath()
 				                                          // Escape "\ u" sequence to prevent "Invalid unicode" errors
@@ -187,7 +260,7 @@ public class ClassFilePage
 				stringBuffer.append("\n\n/* Location:              ");
 				stringBuffer.append(location);
 				// Add Java compiler version
-				int majorVersion = printer.getMajorVersion();
+				int majorVersion = lineNumberStringBuilderPrinter.getMajorVersion();
 
 				if (majorVersion >= 45) {
 					stringBuffer.append("\n * Java compiler version: ");
@@ -201,13 +274,22 @@ public class ClassFilePage
 					stringBuffer.append(" (");
 					stringBuffer.append(majorVersion);
 					stringBuffer.append('.');
-					stringBuffer.append(printer.getMinorVersion());
+					stringBuffer.append(lineNumberStringBuilderPrinter.getMinorVersion());
 					stringBuffer.append(')');
 				}
-				// Add JD-Core version
-				stringBuffer.append("\n * JD-Core Version:       ");
-				stringBuffer.append(preferences.get(JD_CORE_VERSION));
-				stringBuffer.append("\n */");
+				boolean decompileWithQuiltflower = Preference.getBoolean(preferences,
+				                                                         ClassFileDecompilerPreferences.decompileWithQuiltflower);
+				if (decompileWithQuiltflower) {
+					// Add JD-Core version
+					stringBuffer.append("\n * Quiltflower Version:       ");
+					stringBuffer.append(preferences.get(QUILTFLOWER_VERSION));
+					stringBuffer.append("\n */");
+				} else {
+					// Add JD-Core version
+					stringBuffer.append("\n * JD-Core Version:       ");
+					stringBuffer.append(preferences.get(JD_CORE_VERSION));
+					stringBuffer.append("\n */");
+				}
 			}
 
 			try (PrintStream ps = new PrintStream(new NewlineOutputStream(os),
@@ -227,6 +309,52 @@ public class ClassFilePage
 				assert ExceptionUtil.printStackTrace(ee);
 			}
 		}
+	}
+
+	private void decompileClassFile(Map<String, String> preferences,
+	                                Map<String, Object> configuration,
+	                                Printer printer)
+					throws
+					Exception {
+		// Init containerLoader
+		ContainerLoader containerLoader = new ContainerLoader(entry);
+
+		// Format internal name
+		String entryPath = entry.getPath();
+		assert entryPath.endsWith(".class");
+		String entryInternalName = entryPath.substring(0,
+		                                               entryPath.length() - 6); // 6 = ".class".length()
+
+		//TODO
+		//		boolean decompileWithQuiltflower = Preference.getBoolean(preferences,
+		//		                                                         ClassFileDecompilerPreferences
+		//		                                                         .decompileWithQuiltflower);
+		//		if (decompileWithQuiltflower) {
+		//			String[] quiltflowerArgs = toQuiltflowerClassArgs(entry,
+		//			                                                  containerLoader,
+		//			                                                  entryInternalName,
+		//			                                                  preferences);
+		//			ConsoleDecompiler.main(quiltflowerArgs);
+		//		} else {
+		URI  entryUri      = entry.getUri();
+		File fromEntryFile = new File(entryUri);
+		File fromFile      = getFromClassFile(fromEntryFile);
+		File toFile        = getToJavaFile(fromEntryFile);
+		System.out.printf("Decompiling class file with JD-Core %s%n"
+		                  + "from %s%n"
+		                  + "to %s%n"
+		                  + "preferences=%s%n"
+		                  + "configuration=%s%n",
+		                  preferences.get(JD_CORE_VERSION),
+		                  fromFile,
+		                  toFile,
+		                  preferences,
+		                  configuration);
+		JD_CORE_CLASS_FILE_TO_JAVA_SOURCE_DECOMPILER.decompile(containerLoader,
+		                                                       printer,
+		                                                       entryInternalName,
+		                                                       configuration);
+		//		}
 	}
 
 	// --- LineNumberNavigable --- //

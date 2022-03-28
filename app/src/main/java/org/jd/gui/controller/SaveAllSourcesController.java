@@ -12,6 +12,7 @@ import org.jd.gui.api.feature.SourcesSavable;
 import org.jd.gui.api.model.Container;
 import org.jd.gui.service.preferencespanel.ClassFileDecompilerPreferences;
 import org.jd.gui.service.preferencespanel.Preference;
+import org.jd.gui.service.preferencespanel.QuiltflowerFileSaverPreferences;
 import org.jd.gui.util.exception.ExceptionUtil;
 import org.jd.gui.view.SaveAllSourcesView;
 import org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler;
@@ -21,8 +22,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -30,11 +30,13 @@ import java.util.concurrent.ScheduledExecutorService;
 public class SaveAllSourcesController
 				implements SourcesSavable.Controller,
 				           SourcesSavable.Listener {
-	protected API                api;
-	protected SaveAllSourcesView saveAllSourcesView;
-	protected boolean            cancel;
-	protected int                counter;
-	protected int                mask;
+	protected static final String             JD_CORE_VERSION     = "JdGuiPreferences.jdCoreVersion";
+	protected static final String             QUILTFLOWER_VERSION = "JdGuiPreferences.quiltflowerVersion";
+	protected              API                api;
+	protected              SaveAllSourcesView saveAllSourcesView;
+	protected              boolean            cancel;
+	protected              int                counter;
+	protected              int                mask;
 
 	public SaveAllSourcesController(API api,
 	                                JFrame mainFrame) {
@@ -46,15 +48,13 @@ public class SaveAllSourcesController
 
 	public void show(ScheduledExecutorService executor,
 	                 SourcesSavable savable,
-	                 File toFile,
+	                 File toSourcesJarFile,
 	                 Map<String, String> preferences) {
 		// Show
-		Container.Entry entry    = savable.getEntry();
-		File            fromFile = new File(entry.getUri());
-		this.saveAllSourcesView.show(fromFile,
-		                             toFile);
-		String decompileWithQuiltflower = Preference.get(preferences,
-		                                                 ClassFileDecompilerPreferences.decompileWithQuiltflower);
+		Container.Entry entry       = savable.getEntry();
+		File            fromJarFile = new File(entry.getUri());
+		this.saveAllSourcesView.show(fromJarFile,
+		                             toSourcesJarFile);
 
 		// Execute background task
 		executor.execute(() -> {
@@ -75,7 +75,7 @@ public class SaveAllSourcesController
 			mask--;
 
 			try {
-				Path path = Paths.get(toFile.toURI());
+				Path path = Paths.get(toSourcesJarFile.toURI());
 				Files.deleteIfExists(path);
 
 				try {
@@ -84,13 +84,29 @@ public class SaveAllSourcesController
 					if ((parentPath != null) && !Files.exists(parentPath)) {
 						Files.createDirectories(parentPath);
 					}
-
-					if (decompileWithQuiltflower.equals(ClassFileDecompilerPreferences.decompileWithQuiltflower.getDefaultValue())) {
-						String[] quiltflowerArgs = toQuiltflowerArgs(fromFile,
-						                                             toFile,
-						                                             preferences);
+					boolean decompileWithQuiltflower = Preference.getBoolean(preferences,
+					                                                         ClassFileDecompilerPreferences.decompileWithQuiltflower);
+					if (decompileWithQuiltflower) {
+						String[] quiltflowerArgs = QuiltflowerFileSaverPreferences.toQuiltflowerJarArgs(fromJarFile,
+						                                                                                toSourcesJarFile,
+						                                                                                preferences);
+						System.out.printf("Decompiling jar file with Quiltflower %s%n"
+						                  + "from %s%n"
+						                  + "to %s%n"
+						                  + "preferences=%s%n"
+						                  + "quiltflowerArgs=%s%n",
+						                  preferences.get(QUILTFLOWER_VERSION),
+						                  fromJarFile,
+						                  toSourcesJarFile,
+						                  preferences,
+						                  Arrays.toString(quiltflowerArgs));
 						ConsoleDecompiler.main(quiltflowerArgs);
 					} else {
+						System.out.printf("Decompiling jar file with JD-Core %s%n" + "from %s%n" + "to %s%n" + "preferences=%s%n",
+						                  preferences.get(JD_CORE_VERSION),
+						                  fromJarFile,
+						                  toSourcesJarFile,
+						                  preferences);
 						savable.save(api,
 						             this,
 						             this,
@@ -110,17 +126,6 @@ public class SaveAllSourcesController
 			}
 			saveAllSourcesView.hide();
 		});
-	}
-
-	private String[] toQuiltflowerArgs(File fromFile,
-	                                   File toFile,
-	                                   Map<String, String> preferences) {
-		List<String> quiltflowerArgsList = new ArrayList<>();
-		quiltflowerArgsList.add("--file");
-		quiltflowerArgsList.add(fromFile.getAbsolutePath());
-		quiltflowerArgsList.add(toFile.getAbsolutePath());
-		String[] quiltflowerArgs = quiltflowerArgsList.toArray(new String[quiltflowerArgsList.size()]);
-		return quiltflowerArgs;
 	}
 
 	public boolean isActivated() {return saveAllSourcesView.isVisible();}

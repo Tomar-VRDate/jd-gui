@@ -12,6 +12,7 @@ import org.fife.ui.rtextarea.Marker;
 import org.jd.gui.api.API;
 import org.jd.gui.api.model.Container;
 import org.jd.gui.api.model.Indexes;
+import org.jd.gui.service.preferencespanel.Preference;
 import org.jd.gui.util.decompiler.ContainerLoader;
 import org.jd.gui.util.decompiler.StringBuilderPrinter;
 import org.jd.gui.util.exception.ExceptionUtil;
@@ -54,9 +55,9 @@ public class ModuleInfoFilePage
 			typeDeclarations.clear();
 
 			// Init preferences
-			boolean unicodeEscape = getPreferenceValue(preferences,
-			                                           ESCAPE_UNICODE_CHARACTERS,
-			                                           false);
+			boolean unicodeEscape = Preference.getBoolean(preferences,
+			                                              ESCAPE_UNICODE_CHARACTERS,
+			                                              false);
 
 			// Init loader
 			ContainerLoader loader = new ContainerLoader(entry);
@@ -72,9 +73,9 @@ public class ModuleInfoFilePage
 			                                               entryPath.length() - 6); // 6 = ".class".length()
 
 			// Decompile class file
-			DECOMPILER.decompile(loader,
-			                     printer,
-			                     entryInternalName);
+			JD_CORE_CLASS_FILE_TO_JAVA_SOURCE_DECOMPILER.decompile(loader,
+			                                                       printer,
+			                                                       entryInternalName);
 		} catch (Throwable t) {
 			assert ExceptionUtil.printStackTrace(t);
 			setText("// INTERNAL ERROR //");

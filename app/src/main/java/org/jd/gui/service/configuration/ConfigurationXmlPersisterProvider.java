@@ -25,6 +25,7 @@ public class ConfigurationXmlPersisterProvider
 				implements ConfigurationPersister {
 	protected static final String ERROR_BACKGROUND_COLOR = "JdGuiPreferences.errorBackgroundColor";
 	protected static final String JD_CORE_VERSION        = "JdGuiPreferences.jdCoreVersion";
+	protected static final String QUILTFLOWER_VERSION    = "JdGuiPreferences.quiltflowerVersion";
 
 	protected static final File FILE = getConfigFile();
 
@@ -78,12 +79,10 @@ public class ConfigurationXmlPersisterProvider
 		Dimension screenSize = Toolkit.getDefaultToolkit()
 		                              .getScreenSize();
 
-		int w = (screenSize.width > Constants.DEFAULT_WIDTH)
-		        ? Constants.DEFAULT_WIDTH
-		        : screenSize.width;
-		int h = (screenSize.height > Constants.DEFAULT_HEIGHT)
-		        ? Constants.DEFAULT_HEIGHT
-		        : screenSize.height;
+		int w = Math.min(screenSize.width,
+		                 Constants.DEFAULT_WIDTH);
+		int h = Math.min(screenSize.height,
+		                 Constants.DEFAULT_HEIGHT);
 		int x = (screenSize.width - w) / 2;
 		int y = (screenSize.height - h) / 2;
 
@@ -106,6 +105,8 @@ public class ConfigurationXmlPersisterProvider
 		config.setRecentSaveDirectory(recentSaveDirectory);
 
 		if (FILE.exists()) {
+			System.out.printf("Loading Configuration from %s%n",
+			                  FILE.getAbsolutePath());
 			try (FileInputStream fis = new FileInputStream(FILE)) {
 				XMLStreamReader reader = XMLInputFactory.newInstance()
 				                                        .createXMLStreamReader(fis);
@@ -216,6 +217,9 @@ public class ConfigurationXmlPersisterProvider
 		config.getPreferences()
 		      .put(JD_CORE_VERSION,
 		           getJdCoreVersion());
+		config.getPreferences()
+		      .put(QUILTFLOWER_VERSION,
+		           getQuiltflowerVersion());
 
 		return config;
 	}
@@ -242,8 +246,32 @@ public class ConfigurationXmlPersisterProvider
 		return "SNAPSHOT";
 	}
 
+	protected String getQuiltflowerVersion() {
+		try {
+			Enumeration<URL> enumeration = ConfigurationXmlPersisterProvider.class.getClassLoader()
+			                                                                      .getResources("META-INF/MANIFEST.MF");
+
+			while (enumeration.hasMoreElements()) {
+				try (InputStream is = enumeration.nextElement()
+				                                 .openStream()) {
+					String attribute = new Manifest(is).getMainAttributes()
+					                                   .getValue("Quiltflower-Version");
+					if (attribute != null) {
+						return attribute;
+					}
+				}
+			}
+		} catch (IOException e) {
+			assert ExceptionUtil.printStackTrace(e);
+		}
+
+		return "1.7.0";
+	}
+
 	@Override
 	public void save(Configuration configuration) {
+		System.out.printf("Saving Configuration to %s%n",
+		                  FILE.getAbsolutePath());
 		Point     l = configuration.getMainWindowLocation();
 		Dimension s = configuration.getMainWindowSize();
 

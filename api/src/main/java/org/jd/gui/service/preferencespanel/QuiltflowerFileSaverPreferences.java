@@ -1,7 +1,12 @@
 package org.jd.gui.service.preferencespanel;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
+@SuppressWarnings("UnnecessaryLocalVariable")
 public enum QuiltflowerFileSaverPreferences
 				implements Preference {
 	rbr("Hide bridge methods",
@@ -169,11 +174,9 @@ public enum QuiltflowerFileSaverPreferences
 	    Preference.TRUE,
 	    Preference.FALSE,
 	    Preference.TRUE);
-	private static final LinkedHashMap<String, QuiltflowerFileSaverPreferences> namePreferencesMap
-					= GenericPreferencesPanel.toPreferenceByNameMap(QuiltflowerFileSaverPreferences.values());
+	private static final LinkedHashMap<String, QuiltflowerFileSaverPreferences> namePreferencesMap = GenericPreferencesPanel.toPreferenceByNameMap(QuiltflowerFileSaverPreferences.values());
 
-	private static final LinkedHashMap<String, QuiltflowerFileSaverPreferences> descriptionPreferencesMap
-					= GenericPreferencesPanel.toPreferenceByDescriptionMap(QuiltflowerFileSaverPreferences.values());
+	private static final LinkedHashMap<String, QuiltflowerFileSaverPreferences> descriptionPreferencesMap = GenericPreferencesPanel.toPreferenceByDescriptionMap(QuiltflowerFileSaverPreferences.values());
 
 	private final String   description;
 	private final String[] possibleValues;
@@ -201,6 +204,31 @@ public enum QuiltflowerFileSaverPreferences
 
 	public static QuiltflowerFileSaverPreferences getByDescription(String description) {
 		return descriptionPreferencesMap.get(description);
+	}
+
+	public static String[] toQuiltflowerJarArgs(File fromJarFile,
+	                                            File toSourcesJarFile,
+	                                            Map<String, String> preferences) {
+		List<String> quiltflowerArgsList = new ArrayList<>();
+		quiltflowerArgsList.add("--file");
+		quiltflowerArgsList.add(fromJarFile.getAbsolutePath());
+		quiltflowerArgsList.add(toSourcesJarFile.getAbsolutePath());
+		String[] quiltflowerArgs = quiltflowerArgsList.toArray(new String[0]);
+		return quiltflowerArgs;
+	}
+
+	public static String[] toQuiltflowerClassArgs(File fromJarFile,
+	                                              File fromClassFile,
+	                                              File toJavaFile,
+	                                              Map<String, String> preferences) {
+		List<String> quiltflowerArgsList = new ArrayList<>();
+		quiltflowerArgsList.add("--file");
+		quiltflowerArgsList.add(fromClassFile.getAbsolutePath());
+		quiltflowerArgsList.add(String.format("-e=%s",
+		                                      fromJarFile.getAbsolutePath()));
+		quiltflowerArgsList.add(toJavaFile.getAbsolutePath());
+		String[] quiltflowerArgs = quiltflowerArgsList.toArray(new String[0]);
+		return quiltflowerArgs;
 	}
 
 	@Override

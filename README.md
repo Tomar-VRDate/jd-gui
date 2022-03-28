@@ -11,10 +11,11 @@ reconstructed source code with the JD-GUI for instant access to methods and fiel
 - JD-GUI source code: [https://github.com/java-decompiler/jd-gui](https://github.com/java-decompiler/jd-gui)
 - QuiltFlower source code: [https://github.com/QuiltMC/quiltflower](https://github.com/QuiltMC/quiltflower)
 
-## Changes in this fork
+## Changes in this fork 2022.3.28
 
 1. [QuiltFlower 1.7.0](https://github.com/Tomar-VRDate/quiltflower) embedded and used by default instead of JD Core.
-2. Save all sources is working yet not individual classes which are still decompiled by JD Core.
+2. Decompile jar with Quiltflower on Save All Sources (Ctrl+Alt+S) yet not individual classes which are still decompiled
+   by JD Core.
 3. Set at org.jd.gui.service.preferencespanel.ClassFileDecompilerPreferences.decompileWithQuiltflower using
    org.jd.gui.service.preferencespanel.GenericPreferencesPanelProvider and
    org.jd.gui.service.preferencespanel.Preference implementations like

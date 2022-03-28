@@ -2,6 +2,7 @@ package org.jd.gui.service.preferencespanel;
 
 import java.util.Map;
 
+@SuppressWarnings("UnnecessaryLocalVariable")
 public interface Preference {
 	String FALSE = "0";
 	String TRUE  = "1";
@@ -9,6 +10,24 @@ public interface Preference {
 	String INFO  = "INFO";
 	String WARN  = "WARN";
 	String ERROR = "ERROR";
+
+	static boolean getBoolean(Map<String, String> preferences,
+	                          String key,
+	                          boolean defaultValue) {
+		String preferenceString = preferences.get(key);
+		boolean preferenceBoolean = (preferenceString == null)
+		                            ? defaultValue
+		                            : Boolean.parseBoolean(preferenceString);
+		return preferenceBoolean;
+	}
+
+	static boolean getBoolean(Map<String, String> preferences,
+	                          Preference preference) {
+		String preferenceString = Preference.get(preferences,
+		                                         preference);
+		boolean preferenceValue = preferenceString.equals(preference.getDefaultValue());
+		return preferenceValue;
+	}
 
 	static String get(Map<String, String> preferences,
 	                  Preference preference) {
